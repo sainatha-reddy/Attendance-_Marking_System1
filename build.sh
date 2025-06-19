@@ -43,4 +43,7 @@ echo "⚠️  dlib verification failed"
 python3 -c "import face_recognition; print('✅ face_recognition imported successfully')" || \
 echo "⚠️  face_recognition verification failed"
 
-echo "✅ Build process completed!" 
+echo "✅ Build process completed!"
+
+docker build -t attendance-backend .
+docker run -p 3001:3001 attendance-backend 

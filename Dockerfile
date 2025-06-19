@@ -1,23 +1,12 @@
 # Base image
 FROM python:3.10-slim
 
-# Install system packages + new cmake
+# Install system packages for OpenCV and Pillow
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    wget \
-    python3-dev \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
-    libgtk-3-dev \
-    libboost-python-dev \
+    libgl1 \
+    libglib2.0-0 \
     nodejs \
-    npm && \
-    wget https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.sh && \
-    mkdir /opt/cmake && \
-    sh cmake-3.26.4-linux-x86_64.sh --skip-license --prefix=/opt/cmake && \
-    ln -sf /opt/cmake/bin/cmake /usr/bin/cmake
+    npm
 
 # Set working directory
 WORKDIR /app

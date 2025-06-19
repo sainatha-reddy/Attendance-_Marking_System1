@@ -1,13 +1,8 @@
-# Use official Node.js LTS image
+# Use official Python 3.10 slim image
 FROM python:3.10-slim
 
-# Install Python, pip, venv support, and system dependencies for dlib
-RUN apt-get update && \
-    apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    python3-full \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     libopenblas-dev \
@@ -15,9 +10,10 @@ RUN apt-get update && \
     libx11-dev \
     libgtk-3-dev \
     libboost-python-dev \
+    python3-dev \
     nodejs \
     npm \
-    && ln -s /usr/bin/python3 /usr/bin/python
+    && apt-get clean
 
 # Set working directory
 WORKDIR /app
@@ -31,20 +27,21 @@ RUN npm install
 # Copy Python requirements
 COPY requirements.txt ./
 
-# Create a virtual environment
+# Create virtual environment
 RUN python3 -m venv /opt/venv
 
-# Activate virtual environment and install requirements
-RUN . /opt/venv/bin/activate && pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install requirements using venv pip directly
+RUN /opt/venv/bin/pip install --upgrade pip \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Make sure Python and pip from venv are used by default
+# Set environment to use venv by default
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy the rest of the app files
 COPY . .
 
-# Expose the backend port
+# Expose backend port
 EXPOSE 3001
 
-# Start the Node.js server
+# Start server
 CMD ["node", "server.js"]

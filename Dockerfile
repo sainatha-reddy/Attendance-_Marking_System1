@@ -1,5 +1,5 @@
 # Use official Node.js LTS image
-FROM node:18
+FROM python:3.10-slim
 
 # Install Python, pip, venv support, and system dependencies for dlib
 RUN apt-get update && \
@@ -15,6 +15,8 @@ RUN apt-get update && \
     libx11-dev \
     libgtk-3-dev \
     libboost-python-dev \
+    nodejs \
+    npm \
     && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set working directory

@@ -15,14 +15,11 @@ COPY package*.json ./
 # Install Node.js dependencies
 RUN npm install
 
-# Copy Python requirements and install them
+# Copy Python requirements
 COPY requirements.txt ./
 
-# Create a virtual environment
-RUN python3 -m venv /opt/venv
-
-# Activate the virtual environment and install requirements
-RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+# Create a virtual environment and install requirements
+RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Make sure Python and pip from venv are used by default
 ENV PATH="/opt/venv/bin:$PATH"

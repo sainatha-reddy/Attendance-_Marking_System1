@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 interface NotificationProps {
   message: string;
@@ -17,6 +17,13 @@ export default function Notification({
 }: NotificationProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  }, [onClose]);
+
   useEffect(() => {
     if (isVisible) {
       setIsAnimating(true);
@@ -26,14 +33,7 @@ export default function Notification({
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, duration]);
-
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  };
+  }, [isVisible, duration, handleClose]);
 
   if (!isVisible) return null;
 

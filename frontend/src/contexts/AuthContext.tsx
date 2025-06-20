@@ -58,9 +58,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             alert('Access Denied: Please sign in with your @iiitdm.ac.in email address.');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error handling redirect result:', error);
-        if (error.message.includes('Access restricted to IIITDM')) {
+        if (error instanceof Error && error.message.includes('Access restricted to IIITDM')) {
           alert('Access Denied: Please sign in with your @iiitdm.ac.in email address.');
         }
       }
@@ -81,11 +81,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       // Use signInWithRedirect instead of signInWithPopup to avoid COOP issues
       await signInWithRedirect(auth, provider);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error signing in with Google:', error);
       
       // Check if it's our custom domain restriction error
-      if (error.message.includes('Access restricted to IIITDM')) {
+      if (error instanceof Error && error.message.includes('Access restricted to IIITDM')) {
         alert('Access Denied: Please sign in with your @iiitdm.ac.in email address.');
       } else {
         alert('Sign-in failed. Please try again.');

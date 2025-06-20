@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Notification from '../components/Notification';
 
@@ -31,8 +31,8 @@ export default function Home() {
     setIsMarkingAttendance(true);
 
     try {
-      // Use environment variable for API URL
-      const apiUrl = import.meta.env.VITE_API_URL;
+      // Use environment variable for API URL with fallback
+      const apiUrl = (import.meta.env as { VITE_API_URL?: string }).VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
         headers: {
@@ -54,8 +54,6 @@ export default function Home() {
       setIsMarkingAttendance(false);
     }
   };
-
-
 
   // Extract user info
   const getUserName = () => {
@@ -140,7 +138,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </nav>*/}
+      </nav>}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">

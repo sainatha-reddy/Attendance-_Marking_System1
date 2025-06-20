@@ -73,7 +73,7 @@ def send_stream(socket_conn, quantized_embedding):
 
 def connect_to_pynq(max_retries=3):
     IP = '172.16.151.175'
-    PORT = 8888
+    PORT = 8887
     for attempt in range(max_retries):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

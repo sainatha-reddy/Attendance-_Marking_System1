@@ -472,8 +472,8 @@ app.use((req, res) => {
 
 // Allow your Vercel domain
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://attendance-marking-system-six.vercel.app'
+  'https://attendance-marking-system-six.vercel.app',
+  'http://localhost:5173'
 ];
 app.use(cors({
   origin: allowedOrigins,

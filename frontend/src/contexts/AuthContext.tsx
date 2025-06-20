@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setUser(user);
       setLoading(false);
     });
@@ -44,9 +45,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Handle redirect result
     const handleRedirectResult = async () => {
       try {
+        console.log('Checking for redirect result...');
         const result = await getRedirectResult(auth);
+        console.log('Redirect result:', result);
+        
         if (result?.user) {
           const user = result.user;
+          console.log('User from redirect:', user.email);
           
           // Check the email domain after redirect sign-in
           if (user.email && user.email.endsWith('@iiitdm.ac.in')) {
@@ -54,9 +59,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log('Sign-in successful for IIITDM user:', user.email);
           } else {
             // Sign out the user and show error
+            console.log('Invalid domain, signing out user');
             await signOut(auth);
             alert('Access Denied: Please sign in with your @iiitdm.ac.in email address.');
           }
+        } else {
+          console.log('No redirect result found');
         }
       } catch (error: unknown) {
         console.error('Error handling redirect result:', error);

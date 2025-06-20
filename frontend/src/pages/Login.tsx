@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import React, { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
@@ -9,15 +9,36 @@ export default function Login() {
 
   // Redirect if user is already logged in
   useEffect(() => {
+    console.log('Login component - user state:', user);
     if (user) {
+      console.log('User is authenticated, redirecting to /home');
       navigate('/home');
     }
   }, [user, navigate]);
 
+  // Fallback: Check if we're on login page but user is authenticated
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      if (user && window.location.pathname === '/login') {
+        console.log('Fallback: User authenticated but on login page, redirecting...');
+        navigate('/home', { replace: true });
+      }
+    };
+
+    // Check immediately
+    checkAuthStatus();
+
+    // Check after a short delay to handle async auth state
+    const timer = setTimeout(checkAuthStatus, 1000);
+    return () => clearTimeout(timer);
+  }, [user, navigate]);
+
   const handleGoogleSignIn = async () => {
+    console.log('Starting Google sign-in process...');
     setIsLoading(true);
     try {
       await signInWithGoogle();
+      console.log('Google sign-in initiated, redirect should happen automatically');
     } catch (error) {
       console.error('Error signing in with Google:', error);
     } finally {

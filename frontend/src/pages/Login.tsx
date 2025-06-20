@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Login() {
   const { signInWithGoogle, user } = useAuth();
@@ -8,16 +8,16 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if user is already logged in
-  if (user) {
-    navigate('/home');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      navigate('/home');
     } catch (error) {
       console.error('Error signing in with Google:', error);
     } finally {

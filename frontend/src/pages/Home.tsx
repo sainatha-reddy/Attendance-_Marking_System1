@@ -33,7 +33,7 @@ export default function Home() {
     try {
       // Use environment variable for API URL with fallback
       const apiUrl = (import.meta.env as { VITE_API_URL?: string }).VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}api/mark-attendance`, {
+      const response = await fetch(`${apiUrl}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

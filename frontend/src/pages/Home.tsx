@@ -31,9 +31,11 @@ export default function Home() {
     setIsMarkingAttendance(true);
 
     try {
-      // Use environment variable for API URL with fallback
-      const apiUrl = (import.meta.env as { VITE_API_URL?: string }).VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}`, {
+      // Use environment variable for the API base URL, with a fallback for local dev
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+      // Always append the correct API path
+      const response = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -11,7 +11,6 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -34,6 +33,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
+// Parse JSON bodies
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Favicon handler to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
@@ -218,8 +220,8 @@ app.get('/api/test-python-detailed', (req, res) => {
   });
 });
 
-// Route to execute Python script
-app.post('/api/mark-attendance', (req, res) => {
+// Route to execute Python script for attendance marking
+app.post('/api/mark-attendance', async (req, res) => {
   console.log('📝 Starting attendance marking process...');
   console.log('Request origin:', req.get('origin'));
   console.log('Environment:', {
@@ -278,7 +280,7 @@ app.post('/api/mark-attendance', (req, res) => {
     console.log('Python environment test failed:', error.message);
   }
   
-  // Execute Python script with proper error handling
+  // Execute Python script (it will handle image capture internally)
   const pythonProcess = spawn(pythonCmd, [pythonScriptPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: true,
@@ -310,7 +312,7 @@ app.post('/api/mark-attendance', (req, res) => {
         }
       });
     }
-  }, 30000); // 30 seconds timeout for localhost
+  }, 30000); // 30 seconds timeout
   
   pythonProcess.stdout.on('data', (data) => {
     const message = data.toString();
@@ -356,7 +358,7 @@ app.post('/api/mark-attendance', (req, res) => {
                      output.includes('Attendance marked successfully') ||
                      output.includes('Stream sent to PYNQ') ||
                      output.includes('Attendance marked (simulated)') ||
-                     output.includes('Attendance marked (simulated)') ||
+                     output.includes('[SUCCESS]') ||
                      (code === 0 && !output.includes('No face found'));
     
     if (isSuccess) {
@@ -369,9 +371,7 @@ app.post('/api/mark-attendance', (req, res) => {
           pynqConnected: output.includes('Connected to PYNQ server'),
           dataSent: output.includes('Stream sent to PYNQ'),
           serverMode: output.includes('Server environment'),
-          simulated: output.includes('simulated'),
-          serverMode: output.includes('Server environment'),
-          simulated: output.includes('simulated')
+          simulated: output.includes('simulated') || output.includes('FALLBACK')
         }
       });
     } else {
@@ -406,13 +406,10 @@ app.post('/api/mark-attendance', (req, res) => {
         success: false,
         message: errorMessage,
         error: errorType,
-        error: errorType,
         debug: {
           exitCode: code,
           pythonCmd,
           scriptPath: pythonScriptPath,
-          output: output,
-          error: error,
           output: output,
           error: error
         }

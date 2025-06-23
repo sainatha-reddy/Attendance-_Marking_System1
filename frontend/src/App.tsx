@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 // import Login from './pages/Login';
 import Home from './pages/Home';
+import CameraPage from './pages/CameraPage';
 
 // Protected Route component
 // const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/home" element={<Home />} />
+          <Route path="/camera" element={<CameraPage />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </AuthProvider>

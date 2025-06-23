@@ -9,6 +9,11 @@ import cv2
 
 def is_server_environment():
     """Enhanced server environment detection for cloud platforms"""
+    # Force server mode if FORCE_SERVER_MODE environment variable is set
+    if os.environ.get('FORCE_SERVER_MODE') == 'true':
+        print("FORCE_SERVER_MODE enabled - using server mode")
+        return True
+    
     # Check for common cloud platform environment variables
     cloud_indicators = [
         'RAILWAY_ENVIRONMENT',
@@ -40,6 +45,14 @@ def is_server_environment():
     # Check for common server environment variables
     if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENVIRONMENT') == 'production':
         print("Production environment detected - server environment")
+        return True
+    
+    # Check if we're running on a cloud platform by checking hostname
+    import socket
+    hostname = socket.gethostname()
+    cloud_hostnames = ['railway', 'render', 'heroku', 'vercel', 'netlify', 'aws', 'google']
+    if any(cloud_name in hostname.lower() for cloud_name in cloud_hostnames):
+        print(f"Cloud hostname detected: {hostname}")
         return True
     
     return False
@@ -142,6 +155,9 @@ def main():
     image_path = "photo.jpg"
     print("== PIL-BASED FACE ATTENDANCE ==")
     print(f"Environment check: {'SERVER' if is_server_environment() else 'LOCAL'}")
+    
+    # Force server mode if running on cloud (you can uncomment this line if needed)
+    # os.environ['FORCE_SERVER_MODE'] = 'true'
     
     capture_image(image_path)
     embedding = generate_pseudo_embedding(image_path)

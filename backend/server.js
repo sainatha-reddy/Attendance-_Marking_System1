@@ -288,6 +288,16 @@ app.post('/api/mark-attendance', async (req, res) => {
   
   // Execute Python script (it will handle image capture internally)
   console.log('Executing Python script...');
+  
+  // Determine if we're on a cloud platform
+  const isCloudPlatform = process.env.RAILWAY_ENVIRONMENT || 
+                          process.env.RENDER || 
+                          process.env.HEROKU || 
+                          process.env.VERCEL ||
+                          process.env.NODE_ENV === 'production';
+  
+  console.log('Cloud platform detected:', isCloudPlatform);
+  
   const pythonProcess = spawn(pythonCmd, [pythonScriptPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: true,
@@ -299,7 +309,9 @@ app.post('/api/mark-attendance', async (req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
       RENDER: process.env.RENDER,
-      ENVIRONMENT: process.env.ENVIRONMENT
+      ENVIRONMENT: process.env.ENVIRONMENT,
+      // Force server mode on cloud platforms
+      FORCE_SERVER_MODE: isCloudPlatform ? 'true' : 'false'
     }
   });
   

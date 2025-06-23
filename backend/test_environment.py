@@ -22,7 +22,8 @@ def test_environment():
         'GOOGLE_CLOUD_PROJECT',
         'NODE_ENV',
         'ENVIRONMENT',
-        'DISPLAY'
+        'DISPLAY',
+        'FORCE_SERVER_MODE'
     ]
     
     print("Environment Variables:")
@@ -42,6 +43,11 @@ def test_environment():
     # Check OS
     print(f"OS: {os.name}")
     print(f"Platform: {sys.platform}")
+    
+    # Check hostname
+    import socket
+    hostname = socket.gethostname()
+    print(f"Hostname: {hostname}")
     
     # Test camera
     print("\n=== CAMERA TEST ===")

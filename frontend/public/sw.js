@@ -2,9 +2,7 @@
 const CACHE_NAME = 'attendance-system-v1';
 const urlsToCache = [
   '/',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/index.html'
 ];
 
 // Install event
@@ -42,8 +40,6 @@ function doBackgroundSync() {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'Attendance marked successfully!',
-    icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now()

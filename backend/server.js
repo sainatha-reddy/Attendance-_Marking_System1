@@ -24,14 +24,17 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    const allowedMime = ['image/jpeg', 'image/png'];
+    const allowedExt = ['.jpg', '.jpeg', '.png'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedMime.includes(file.mimetype) && allowedExt.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'), false);
+      console.log(`❌ Rejected upload - mimetype: ${file.mimetype}, ext: ${ext}`);
+      cb(new Error('Only image files (JPG/PNG) are allowed'), false);
     }
   }
 });

@@ -126,25 +126,26 @@ const CameraPage: React.FC = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      
+
       // Convert data URL to blob
       const res = await fetch(imageData);
       const blob = await res.blob();
-      
-      // Create a new File object with the correct type
+
+      // Create a File object with the correct type
       const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-      
+
       // Create FormData and append the file
       const formData = new FormData();
       formData.append('image', file); // 'image' must match backend
-      
+
       const backendResponse = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
         body: formData,
+        // DO NOT set Content-Type header manually!
       });
 
       const data = await backendResponse.json();
-      
+
       if (data.success) {
         setSuccess(true);
         setTimeout(() => {

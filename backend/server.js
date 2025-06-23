@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import { spawn, execSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,30 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, __dirname); // Save to backend directory
+  },
+  filename: function (req, file, cb) {
+    cb(null, 'photo.jpg'); // Always save as photo.jpg
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -220,8 +245,8 @@ app.get('/api/test-python-detailed', (req, res) => {
   });
 });
 
-// Route to execute Python script for attendance marking
-app.post('/api/mark-attendance', async (req, res) => {
+// Route to execute Python script for attendance marking with image upload
+app.post('/api/mark-attendance', upload.single('image'), async (req, res) => {
   console.log('📝 Starting attendance marking process...');
   console.log('Request origin:', req.get('origin'));
   console.log('Environment:', {
@@ -235,6 +260,36 @@ app.post('/api/mark-attendance', async (req, res) => {
     VERCEL: process.env.VERCEL,
     ENVIRONMENT: process.env.ENVIRONMENT
   });
+
+  // Check if image was uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No image file provided',
+      error: 'missing_image',
+      instructions: 'Please capture an image using the camera and try again'
+    });
+  }
+
+  console.log('Image received:', {
+    filename: req.file.originalname,
+    mimetype: req.file.mimetype,
+    size: req.file.size,
+    savedAs: req.file.filename,
+    path: req.file.path
+  });
+
+  // Verify the image was saved
+  const imagePath = join(__dirname, 'photo.jpg');
+  if (!existsSync(imagePath)) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save uploaded image',
+      error: 'image_save_error'
+    });
+  }
+
+  console.log('Image saved successfully to:', imagePath);
   
   const pythonScriptPath = join(__dirname, 'Sender_side.py');
   console.log('Python script path:', pythonScriptPath);
@@ -248,7 +303,7 @@ app.post('/api/mark-attendance', async (req, res) => {
   console.log('Available Python commands:');
   pythonCommands.forEach(cmd => {
     try {
-      const version = execSync(`${pythonCmd} --version`, { encoding: 'utf8', timeout: 5000 });
+      const version = execSync(`${cmd} --version`, { encoding: 'utf8', timeout: 5000 });
       console.log(`✅ ${cmd}: ${version.trim()}`);
       if (pythonCmd === 'python3') pythonCmd = cmd; // Use the first working one
     } catch (error) {
@@ -286,7 +341,7 @@ app.post('/api/mark-attendance', async (req, res) => {
     console.log('Python environment test failed:', error.message);
   }
   
-  // Execute Python script (it will handle image capture internally)
+  // Execute Python script (it will process the uploaded photo.jpg)
   console.log('Executing Python script...');
   
   // Determine if we're on a cloud platform
@@ -397,7 +452,8 @@ app.post('/api/mark-attendance', async (req, res) => {
           dataSent: output.includes('Stream sent to PYNQ'),
           serverMode: output.includes('Server environment') || output.includes('SERVER'),
           simulated: output.includes('simulated') || output.includes('FALLBACK'),
-          dummyImage: output.includes('Dummy Image') || output.includes('SERVER MODE')
+          dummyImage: output.includes('Dummy Image') || output.includes('SERVER MODE'),
+          imageProcessed: output.includes('Image captured and saved') || output.includes('Image saved to')
         }
       });
     } else {

@@ -73,37 +73,32 @@ def create_dummy_image_pil(output_path):
     print(f"Image saved to {output_path}")
     return True
 
-def capture_image(output_path):
-    print(f"Attempting to capture image to: {output_path}")
+def process_uploaded_image(image_path):
+    """Process the uploaded image from frontend"""
+    print(f"Processing uploaded image: {image_path}")
     
-    # Always check server environment first
-    if is_server_environment():
-        print("Server environment detected - using dummy image")
-        return create_dummy_image_pil(output_path)
+    # Check if the uploaded image exists
+    if not os.path.exists(image_path):
+        print(f"Uploaded image not found: {image_path}")
+        return False
     
-    print("Local environment detected - attempting camera capture")
-    
-    # Try to capture from camera
     try:
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("Camera could not be opened - using dummy image")
-            return create_dummy_image_pil(output_path)
+        # Load the image to verify it's valid
+        with Image.open(image_path) as img:
+            print(f"Uploaded image loaded successfully: {img.size} {img.mode}")
         
-        ret, frame = cap.read()
-        cap.release()
+        # Convert to OpenCV format for processing
+        img_cv = cv2.imread(image_path)
+        if img_cv is None:
+            print("Failed to load image with OpenCV")
+            return False
         
-        if not ret or frame is None:
-            print("Failed to capture frame - using dummy image")
-            return create_dummy_image_pil(output_path)
-        
-        cv2.imwrite(output_path, frame)
-        print(f"Image captured and saved to {output_path}")
+        print(f"Image processed successfully: {img_cv.shape}")
         return True
         
     except Exception as e:
-        print(f"Camera capture failed: {e} - using dummy image")
-        return create_dummy_image_pil(output_path)
+        print(f"Error processing uploaded image: {e}")
+        return False
 
 def generate_pseudo_embedding(image_path):
     """Use PIL image bytes to generate deterministic pseudo-embedding"""
@@ -153,15 +148,21 @@ def connect_to_pynq(max_retries=3):
 
 def main():
     image_path = "photo.jpg"
-    print("== PIL-BASED FACE ATTENDANCE ==")
+    print("== FRONTEND-BASED FACE ATTENDANCE ==")
     print(f"Environment check: {'SERVER' if is_server_environment() else 'LOCAL'}")
     
-    # Force server mode if running on cloud (you can uncomment this line if needed)
-    # os.environ['FORCE_SERVER_MODE'] = 'true'
+    # Process the uploaded image from frontend
+    if process_uploaded_image(image_path):
+        print("Uploaded image processed successfully")
+    else:
+        print("Failed to process uploaded image - using dummy image")
+        create_dummy_image_pil(image_path)
     
-    capture_image(image_path)
+    # Generate embedding from the image (uploaded or dummy)
     embedding = generate_pseudo_embedding(image_path)
     quantized = quantize_embedding(embedding)
+    
+    # Connect to PYNQ and send data
     sock = connect_to_pynq()
     if sock:
         send_stream(sock, quantized)

@@ -249,6 +249,8 @@ app.get('/api/test-python-detailed', (req, res) => {
 
 // Route to execute Python script for attendance marking with image upload
 app.post('/api/mark-attendance', upload.single('image'), async (req, res) => {
+  console.log('File received:', req.file);
+
   console.log('📝 Starting attendance marking process...');
   console.log('Request origin:', req.get('origin'));
   console.log('Environment:', {

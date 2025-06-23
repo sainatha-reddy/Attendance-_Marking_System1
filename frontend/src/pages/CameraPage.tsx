@@ -128,8 +128,8 @@ const CameraPage: React.FC = () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       
       // Convert data URL to blob
-      const response = await fetch(imageData);
-      const blob = await response.blob();
+      const res = await fetch(imageData);
+      const blob = await res.blob();
       
       // Create FormData
       const formData = new FormData();

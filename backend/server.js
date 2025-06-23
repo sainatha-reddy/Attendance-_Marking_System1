@@ -227,7 +227,13 @@ app.post('/api/mark-attendance', async (req, res) => {
   console.log('Environment:', {
     NODE_ENV: process.env.NODE_ENV,
     PWD: process.cwd(),
-    PATH: process.env.PATH
+    PATH: process.env.PATH,
+    // Log cloud platform indicators
+    RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+    RENDER: process.env.RENDER,
+    HEROKU: process.env.HEROKU,
+    VERCEL: process.env.VERCEL,
+    ENVIRONMENT: process.env.ENVIRONMENT
   });
   
   const pythonScriptPath = join(__dirname, 'Sender_side.py');
@@ -242,7 +248,7 @@ app.post('/api/mark-attendance', async (req, res) => {
   console.log('Available Python commands:');
   pythonCommands.forEach(cmd => {
     try {
-      const version = execSync(`${cmd} --version`, { encoding: 'utf8', timeout: 5000 });
+      const version = execSync(`${pythonCmd} --version`, { encoding: 'utf8', timeout: 5000 });
       console.log(`✅ ${cmd}: ${version.trim()}`);
       if (pythonCmd === 'python3') pythonCmd = cmd; // Use the first working one
     } catch (error) {
@@ -281,13 +287,19 @@ app.post('/api/mark-attendance', async (req, res) => {
   }
   
   // Execute Python script (it will handle image capture internally)
+  console.log('Executing Python script...');
   const pythonProcess = spawn(pythonCmd, [pythonScriptPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: true,
     env: {
       ...process.env,
       PYTHONPATH: process.env.PYTHONPATH || '',
-      PATH: process.env.PATH
+      PATH: process.env.PATH,
+      // Ensure cloud platform environment variables are passed
+      NODE_ENV: process.env.NODE_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      RENDER: process.env.RENDER,
+      ENVIRONMENT: process.env.ENVIRONMENT
     }
   });
   
@@ -359,6 +371,7 @@ app.post('/api/mark-attendance', async (req, res) => {
                      output.includes('Stream sent to PYNQ') ||
                      output.includes('Attendance marked (simulated)') ||
                      output.includes('[SUCCESS]') ||
+                     output.includes('FALLBACK') ||
                      (code === 0 && !output.includes('No face found'));
     
     if (isSuccess) {
@@ -370,8 +383,9 @@ app.post('/api/mark-attendance', async (req, res) => {
           faceDetected: !output.includes('No face found'),
           pynqConnected: output.includes('Connected to PYNQ server'),
           dataSent: output.includes('Stream sent to PYNQ'),
-          serverMode: output.includes('Server environment'),
-          simulated: output.includes('simulated') || output.includes('FALLBACK')
+          serverMode: output.includes('Server environment') || output.includes('SERVER'),
+          simulated: output.includes('simulated') || output.includes('FALLBACK'),
+          dummyImage: output.includes('Dummy Image') || output.includes('SERVER MODE')
         }
       });
     } else {
@@ -442,6 +456,60 @@ app.get('/api/health', (req, res) => {
     port: PORT,
     pythonAvailable: true
   });
+});
+
+// Test environment endpoint
+app.get('/api/test-environment', (req, res) => {
+  console.log('🔍 Testing environment...');
+  
+  const pythonCommands = ['python3', 'python', 'python3.11', 'python3.9'];
+  let pythonCmd = 'python3';
+  
+  // Find working Python command
+  for (const cmd of pythonCommands) {
+    try {
+      const version = execSync(`${cmd} --version`, { encoding: 'utf8', timeout: 5000 });
+      console.log(`✅ Found Python: ${cmd} - ${version.trim()}`);
+      pythonCmd = cmd;
+      break;
+    } catch (error) {
+      console.log(`❌ ${cmd}: Not available`);
+    }
+  }
+  
+  const testScriptPath = join(__dirname, 'test_environment.py');
+  console.log('Test script path:', testScriptPath);
+  console.log('Script exists:', existsSync(testScriptPath));
+  
+  try {
+    const testOutput = execSync(`${pythonCmd} ${testScriptPath}`, { 
+      encoding: 'utf8', 
+      timeout: 15000,
+      env: {
+        ...process.env,
+        PYTHONPATH: process.env.PYTHONPATH || '',
+        PATH: process.env.PATH
+      }
+    });
+    
+    res.json({
+      success: true,
+      output: testOutput,
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+        RENDER: process.env.RENDER,
+        ENVIRONMENT: process.env.ENVIRONMENT
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      output: error.stdout ? error.stdout.toString() : '',
+      stderr: error.stderr ? error.stderr.toString() : ''
+    });
+  }
 });
 
 // Error handling middleware

@@ -131,9 +131,12 @@ const CameraPage: React.FC = () => {
       const res = await fetch(imageData);
       const blob = await res.blob();
       
-      // Create FormData
+      // Create a new File object with the correct type
+      const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+      
+      // Create FormData and append the file
       const formData = new FormData();
-      formData.append('image', blob, 'photo.jpg');
+      formData.append('image', file); // 'image' must match backend
       
       const backendResponse = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',

@@ -41,6 +41,7 @@ const corsOptions = {
     const allowedOrigins = [
       'https://attendance-marking-system-six.vercel.app',
       'https://attendance-marking-system-git-main-sainatha-reddys-projects.vercel.app',
+      'https://attendance-marking-system-xi.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173'
     ];

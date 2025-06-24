@@ -46,13 +46,34 @@ const corsOptions = {
       'https://attendance-marking-system-six.vercel.app',
       'https://attendance-marking-system-git-main-sainatha-reddys-projects.vercel.app',
       'https://attendance-marking-system-xi.vercel.app',
+      'https://attendance-marking-system.vercel.app',
+      'https://attendance-marking-system-git-main.vercel.app',
       'http://localhost:3000',
       'http://localhost:5173'
     ];
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    
+    // Log CORS requests for debugging
+    console.log('CORS request from origin:', origin);
+    console.log('Allowed origins:', allowedOrigins);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Railway environment:', process.env.RAILWAY_ENVIRONMENT);
+    
+    // In production, be more permissive for Vercel domains
+    if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+      if (!origin || allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+        console.log('✅ CORS allowed for:', origin);
+        callback(null, true);
+      } else {
+        console.log('❌ CORS blocked for:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // In development, use strict CORS
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -79,7 +100,8 @@ app.get('/', (req, res) => {
     message: 'Attendance Marking System API',
     status: 'Running',
     version: '1.0.0',
-    environment: 'localhost',
+    environment: process.env.RAILWAY_ENVIRONMENT ? 'Railway' : (process.env.NODE_ENV || 'development'),
+    platform: process.env.RAILWAY_ENVIRONMENT ? 'Railway' : 'Local',
     endpoints: {
       health: '/api/health',
       markAttendance: '/api/mark-attendance',

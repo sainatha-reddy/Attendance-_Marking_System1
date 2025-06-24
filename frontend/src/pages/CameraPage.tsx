@@ -141,6 +141,11 @@ const CameraPage: React.FC = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      
+      // Debug logging
+      console.log('API URL:', apiUrl);
+      console.log('Environment:', import.meta.env.MODE);
+      console.log('VITE_API_URL set:', !!import.meta.env.VITE_API_URL);
 
       // Convert data URL to File object using utility
       const file = dataURLtoFile(imageData, 'photo.jpg');
@@ -149,13 +154,34 @@ const CameraPage: React.FC = () => {
       const formData = new FormData();
       formData.append('image', file); // 'image' must match backend
 
+      console.log('Sending request to:', `${apiUrl}/api/mark-attendance`);
+      
       const backendResponse = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
         body: formData,
         // DO NOT set Content-Type header manually!
       });
 
+      console.log('Response status:', backendResponse.status);
+      console.log('Response headers:', Object.fromEntries(backendResponse.headers.entries()));
+
+      if (!backendResponse.ok) {
+        const errorText = await backendResponse.text();
+        console.error('Backend error response:', errorText);
+        
+        if (backendResponse.status === 500) {
+          throw new Error(`Server error (500): ${errorText}`);
+        } else if (backendResponse.status === 404) {
+          throw new Error(`API endpoint not found (404). Please check if the backend is deployed correctly.`);
+        } else if (backendResponse.status === 0) {
+          throw new Error(`Network error: Unable to connect to backend server. Please check if the backend is running and the API URL is correct.`);
+        } else {
+          throw new Error(`HTTP ${backendResponse.status}: ${errorText}`);
+        }
+      }
+
       const data = await backendResponse.json();
+      console.log('Backend response data:', data);
 
       if (data.success) {
         setSuccess(true);
@@ -167,7 +193,22 @@ const CameraPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error sending image to backend:', error);
-      setError('Failed to send image to server. Please try again.');
+      
+      let errorMessage = 'Failed to send image to server. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        } else if (error.message.includes('API endpoint not found')) {
+          errorMessage = 'Backend server is not available. Please contact support.';
+        } else if (error.message.includes('Network error')) {
+          errorMessage = 'Cannot connect to the attendance server. Please try again later.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }

@@ -2,6 +2,21 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, ArrowLeft, RotateCcw, X, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
+// Utility: Convert base64 Data URL to File object with correct MIME
+function dataURLtoFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  
+  return new File([u8arr], filename, { type: mime });
+}
+
 const CameraPage: React.FC = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -127,12 +142,8 @@ const CameraPage: React.FC = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-      // Convert data URL to blob
-      const res = await fetch(imageData);
-      const blob = await res.blob();
-
-      // Create a File object with the correct type
-      const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+      // Convert data URL to File object using utility
+      const file = dataURLtoFile(imageData, 'photo.jpg');
 
       // Create FormData and append the file
       const formData = new FormData();

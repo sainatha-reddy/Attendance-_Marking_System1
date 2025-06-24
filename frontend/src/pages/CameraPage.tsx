@@ -91,60 +91,35 @@ const CameraPage: React.FC = () => {
       
       setStream(newStream);
       
-      // Wait longer for the video element to be ready and rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Try multiple times to find the video element
-      let videoElement: HTMLVideoElement | null = null;
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      while (!videoElement && attempts < maxAttempts) {
-        attempts++;
-        console.log(`🎬 Attempt ${attempts}: Looking for video element...`);
+      // Simple approach: wait and then try to set the video source
+      setTimeout(() => {
+        console.log('🎬 Attempting to set video source...');
         
-        // Try ref first
-        if (videoRef.current) {
-          videoElement = videoRef.current;
-          console.log('✅ Found video element via ref');
-          break;
-        }
+        // Try to find video element
+        const videoEl = document.querySelector('video');
+        console.log('🎬 Video element found:', !!videoEl);
         
-        // Try DOM selector
-        videoElement = document.querySelector('video');
-        if (videoElement) {
-          console.log('✅ Found video element via DOM selector');
-          break;
-        }
-        
-        // Wait a bit before next attempt
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      if (videoElement) {
-        console.log('🎬 Setting video source...');
-        videoElement.srcObject = newStream;
-        
-        // Wait for video to be ready
-        await new Promise((resolve) => {
-          videoElement.onloadedmetadata = () => {
+        if (videoEl) {
+          console.log('🎬 Setting video source...');
+          videoEl.srcObject = newStream;
+          
+          videoEl.onloadedmetadata = () => {
             console.log('✅ Video metadata loaded');
-            console.log('📐 Video dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
-            resolve(true);
+            console.log('📐 Video dimensions:', videoEl.videoWidth, 'x', videoEl.videoHeight);
           };
           
-          videoElement.oncanplay = () => {
+          videoEl.oncanplay = () => {
             console.log('✅ Video can play');
           };
           
-          videoElement.onerror = (e) => {
+          videoEl.onerror = (e) => {
             console.error('❌ Video error:', e);
           };
-        });
-      } else {
-        console.error('❌ No video element found after multiple attempts');
-        setError('Video element not found. Please refresh the page and try again.');
-      }
+        } else {
+          console.error('❌ No video element found');
+        }
+      }, 1000); // Wait 1 second
+      
     } catch (err: unknown) {
       console.error('❌ Error accessing camera:', err);
       
@@ -182,6 +157,25 @@ const CameraPage: React.FC = () => {
         setError('Camera feed appears to be black. You can still try to capture an image or proceed without camera.');
       }
     }, 5000); // 5 second timeout
+
+    // Monitor video element rendering
+    const checkVideoElement = () => {
+      const videoEl = document.querySelector('video');
+      console.log('🔍 Checking video element in DOM:', !!videoEl);
+      if (videoEl) {
+        console.log('✅ Video element found in DOM');
+        console.log('🎬 Video element properties:', {
+          srcObject: !!videoEl.srcObject,
+          readyState: videoEl.readyState,
+          videoWidth: videoEl.videoWidth,
+          videoHeight: videoEl.videoHeight
+        });
+      }
+    };
+
+    // Check immediately and after a delay
+    checkVideoElement();
+    setTimeout(checkVideoElement, 2000);
 
     return () => {
       clearTimeout(cameraTimeout);

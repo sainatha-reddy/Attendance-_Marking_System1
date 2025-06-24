@@ -382,10 +382,23 @@ app.post('/api/mark-attendance', upload.single('image'), async (req, res) => {
                           process.env.NODE_ENV === 'production';
   
   console.log('Cloud platform detected:', isCloudPlatform);
+  console.log('Current working directory:', process.cwd());
+  console.log('Python script path:', pythonScriptPath);
+  console.log('Script exists:', existsSync(pythonScriptPath));
+  
+  // List files in current directory for debugging
+  try {
+    const fs = await import('fs');
+    const files = fs.readdirSync('.');
+    console.log('Files in current directory:', files);
+  } catch (error) {
+    console.log('Could not list directory files:', error.message);
+  }
   
   const pythonProcess = spawn(pythonCmd, [pythonScriptPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: true,
+    cwd: __dirname, // Ensure we're in the backend directory
     env: {
       ...process.env,
       PYTHONPATH: process.env.PYTHONPATH || '',
@@ -608,6 +621,54 @@ app.get('/api/test-environment', (req, res) => {
       stderr: error.stderr ? error.stderr.toString() : ''
     });
   }
+});
+
+// Simple test endpoint for debugging
+app.get('/api/debug', (req, res) => {
+  console.log('🔍 Debug endpoint called');
+  
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      RENDER: process.env.RENDER,
+      ENVIRONMENT: process.env.ENVIRONMENT
+    },
+    filesystem: {
+      currentDir: process.cwd(),
+      backendDir: __dirname,
+      scriptPath: join(__dirname, 'Sender_side.py'),
+      scriptExists: existsSync(join(__dirname, 'Sender_side.py')),
+      requirementsExists: existsSync(join(__dirname, 'requirements.txt'))
+    },
+    python: {
+      commands: ['python3', 'python', 'python3.11', 'python3.9']
+    }
+  };
+  
+  // Test Python availability
+  const pythonCommands = ['python3', 'python', 'python3.11', 'python3.9'];
+  debugInfo.python.available = {};
+  
+  pythonCommands.forEach(cmd => {
+    try {
+      const version = execSync(`${cmd} --version`, { encoding: 'utf8', timeout: 5000 });
+      debugInfo.python.available[cmd] = version.trim();
+    } catch (error) {
+      debugInfo.python.available[cmd] = `Error: ${error.message}`;
+    }
+  });
+  
+  // List files in current directory
+  try {
+    const fs = require('fs');
+    debugInfo.filesystem.files = fs.readdirSync('.');
+  } catch (error) {
+    debugInfo.filesystem.files = `Error: ${error.message}`;
+  }
+  
+  res.json(debugInfo);
 });
 
 // Error handling middleware

@@ -91,6 +91,9 @@ const CameraPage: React.FC = () => {
       
       setStream(newStream);
       
+      // Wait a bit for the video element to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       if (videoRef.current) {
         console.log('🎬 Setting video source...');
         videoRef.current.srcObject = newStream;
@@ -114,7 +117,22 @@ const CameraPage: React.FC = () => {
           }
         });
       } else {
-        console.error('❌ Video ref is null');
+        console.error('❌ Video ref is null - trying fallback approach');
+        // Fallback: try to find the video element by selector
+        const videoElement = document.querySelector('video');
+        if (videoElement) {
+          console.log('🎬 Found video element by selector, setting source...');
+          videoElement.srcObject = newStream;
+          await new Promise((resolve) => {
+            videoElement.onloadedmetadata = () => {
+              console.log('✅ Video metadata loaded (fallback)');
+              resolve(true);
+            };
+          });
+        } else {
+          console.error('❌ No video element found in DOM');
+          setError('Video element not found. Please refresh the page and try again.');
+        }
       }
     } catch (err: unknown) {
       console.error('❌ Error accessing camera:', err);
@@ -163,13 +181,37 @@ const CameraPage: React.FC = () => {
   }, [facingMode]);
 
   const captureImage = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    console.log('📸 Attempting to capture image...');
+    
+    // Try to get video element from ref first
+    let video = videoRef.current;
+    
+    // Fallback: if ref is null, try to find video element by selector
+    if (!video) {
+      console.log('🔄 Video ref is null, trying to find video element by selector...');
+      video = document.querySelector('video');
+    }
+    
+    if (!video) {
+      console.error('❌ No video element found for capture');
+      setError('Video element not found. Please refresh the page and try again.');
+      return;
+    }
+    
+    if (!canvasRef.current) {
+      console.error('❌ Canvas ref is null');
+      setError('Canvas element not found. Please refresh the page and try again.');
+      return;
+    }
 
-    const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    if (!context) return;
+    if (!context) {
+      console.error('❌ Could not get canvas context');
+      setError('Canvas context not available. Please refresh the page and try again.');
+      return;
+    }
 
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth;

@@ -32,6 +32,20 @@ const CameraPage: React.FC = () => {
   // Check if we're on HTTPS (required for camera access in production)
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
 
+  // Test camera availability
+  const testCameraAvailability = async () => {
+    try {
+      console.log('🔍 Testing camera availability...');
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('📹 Available video devices:', videoDevices);
+      return videoDevices.length > 0;
+    } catch (error) {
+      console.error('❌ Error enumerating devices:', error);
+      return false;
+    }
+  };
+
   const startCamera = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -40,6 +54,14 @@ const CameraPage: React.FC = () => {
       // Check if we're on HTTPS
       if (!isSecure) {
         setError('Camera access requires HTTPS. Please use a secure connection.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Test camera availability first
+      const hasCamera = await testCameraAvailability();
+      if (!hasCamera) {
+        setError('No camera devices found on your system.');
         setIsLoading(false);
         return;
       }
@@ -58,20 +80,44 @@ const CameraPage: React.FC = () => {
         audio: false
       };
 
+      console.log('🎥 Requesting camera access with constraints:', constraints);
+      console.log('🔒 Secure context:', isSecure);
+      console.log('📱 User agent:', navigator.userAgent);
+
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('✅ Camera stream obtained:', newStream);
+      console.log('📹 Video tracks:', newStream.getVideoTracks());
+      console.log('🎤 Audio tracks:', newStream.getAudioTracks());
+      
       setStream(newStream);
       
       if (videoRef.current) {
+        console.log('🎬 Setting video source...');
         videoRef.current.srcObject = newStream;
+        
         // Wait for video to be ready
         await new Promise((resolve) => {
           if (videoRef.current) {
-            videoRef.current.onloadedmetadata = resolve;
+            videoRef.current.onloadedmetadata = () => {
+              console.log('✅ Video metadata loaded');
+              console.log('📐 Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+              resolve(true);
+            };
+            
+            videoRef.current.oncanplay = () => {
+              console.log('✅ Video can play');
+            };
+            
+            videoRef.current.onerror = (e) => {
+              console.error('❌ Video error:', e);
+            };
           }
         });
+      } else {
+        console.error('❌ Video ref is null');
       }
     } catch (err: unknown) {
-      console.error('Error accessing camera:', err);
+      console.error('❌ Error accessing camera:', err);
       
       let errorMessage = 'Unable to access camera. Please check your permissions and try again.';
       
@@ -100,7 +146,16 @@ const CameraPage: React.FC = () => {
   useEffect(() => {
     startCamera();
 
+    // Add a timeout to detect if camera is not working
+    const cameraTimeout = setTimeout(() => {
+      if (isLoading && !stream) {
+        console.log('⏰ Camera timeout - video feed may be black');
+        setError('Camera feed appears to be black. You can still try to capture an image or proceed without camera.');
+      }
+    }, 5000); // 5 second timeout
+
     return () => {
+      clearTimeout(cameraTimeout);
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -120,11 +175,17 @@ const CameraPage: React.FC = () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
+    console.log('📸 Capturing image...');
+    console.log('📐 Canvas dimensions:', canvas.width, 'x', canvas.height);
+    console.log('🎬 Video ready state:', video.readyState);
+    console.log('🎬 Video current time:', video.currentTime);
+
     // Draw the video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Convert to data URL
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    console.log('✅ Image captured, data URL length:', imageDataUrl.length);
     setCapturedImage(imageDataUrl);
 
     // Stop the camera stream after capturing
@@ -132,6 +193,14 @@ const CameraPage: React.FC = () => {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+  };
+
+  // Fallback function to proceed without camera
+  const proceedWithoutCamera = () => {
+    console.log('🔄 Proceeding without camera...');
+    // Create a dummy image or proceed directly to backend
+    const dummyImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+    setCapturedImage(dummyImage);
   };
 
   const sendImageToBackend = async (imageData: string) => {
@@ -353,6 +422,16 @@ const CameraPage: React.FC = () => {
                 muted
                 className="w-full h-full object-cover"
               />
+              
+              {/* Fallback Button for Black Video Feed */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <button
+                  onClick={proceedWithoutCamera}
+                  className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow-lg"
+                >
+                  Camera Not Working? Click Here
+                </button>
+              </div>
               
               {/* Capture Button */}
               <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">

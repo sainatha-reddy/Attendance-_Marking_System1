@@ -1,80 +1,62 @@
 # (PASTE THE CONTENTS OF THE LATEST Sender_side.py HERE) 
-import numpy as np
-import socket
-import time
-import sys
 import os
+import time
+import socket
 from PIL import Image, ImageDraw, ImageFont
-import cv2
 
 def is_server_environment():
-    """Enhanced server environment detection for cloud platforms"""
-    # Force server mode if FORCE_SERVER_MODE environment variable is set
+    """Check if running in a server/cloud environment"""
+    # Force server mode if environment variable is set
     if os.environ.get('FORCE_SERVER_MODE') == 'true':
         print("FORCE_SERVER_MODE enabled - using server mode")
         return True
     
-    # Check for common cloud platform environment variables
+    # Check for cloud platform environment variables
     cloud_indicators = [
         'RAILWAY_ENVIRONMENT',
         'RENDER',
         'HEROKU',
         'VERCEL',
-        'NETLIFY',
         'DIGITALOCEAN_APP_PLATFORM',
-        'AWS_LAMBDA_FUNCTION_NAME',
         'GOOGLE_CLOUD_PROJECT'
     ]
     
-    # Check if any cloud platform environment variables exist
     for indicator in cloud_indicators:
         if os.environ.get(indicator):
             print(f"Cloud platform detected: {indicator}")
             return True
     
-    # Check for display (traditional server detection)
-    if not os.environ.get('DISPLAY') and os.name != 'nt':
-        print("No display detected - server environment")
-        return True
-    
-    # Check if we're in a containerized environment
-    if os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER'):
-        print("Docker container detected - server environment")
-        return True
-    
-    # Check for common server environment variables
+    # Check for production environment
     if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENVIRONMENT') == 'production':
         print("Production environment detected - server environment")
         return True
     
-    # Check if we're running on a cloud platform by checking hostname
-    import socket
-    hostname = socket.gethostname()
-    cloud_hostnames = ['railway', 'render', 'heroku', 'vercel', 'netlify', 'aws', 'google']
-    if any(cloud_name in hostname.lower() for cloud_name in cloud_hostnames):
-        print(f"Cloud hostname detected: {hostname}")
-        return True
-    
     return False
 
-def create_dummy_image_pil(output_path):
+def create_dummy_image(output_path):
+    """Create a dummy image for server environments"""
     print("Creating dummy image with PIL...")
-    image = Image.new('RGB', (640, 480), color=(0, 0, 0))
+    image = Image.new('RGB', (640, 480), color=(50, 50, 50))
     draw = ImageDraw.Draw(image)
+    
     try:
+        # Try to use a default font, fallback to default if not available
         font = ImageFont.truetype("arial.ttf", 24)
     except:
         font = ImageFont.load_default()
+    
+    # Draw a simple placeholder
     draw.rectangle([200, 150, 440, 330], fill=(100, 100, 100))
     draw.text((240, 200), "SERVER MODE", font=font, fill=(255, 255, 255))
     draw.text((260, 240), "Dummy Image", font=font, fill=(200, 200, 200))
     draw.text((260, 280), "No Camera", font=font, fill=(200, 200, 200))
+    
     image.save(output_path)
-    print(f"Image saved to {output_path}")
+    print(f"Dummy image saved to {output_path}")
     return True
 
 def process_uploaded_image(image_path):
-    """Process the uploaded image from frontend"""
+    """Process the uploaded image from frontend using Pillow"""
     print(f"Processing uploaded image: {image_path}")
     
     # Check if the uploaded image exists
@@ -83,57 +65,56 @@ def process_uploaded_image(image_path):
         return False
     
     try:
-        # Load the image to verify it's valid
+        # Load and verify the image
         with Image.open(image_path) as img:
             print(f"Uploaded image loaded successfully: {img.size} {img.mode}")
-        
-        # Convert to OpenCV format for processing
-        img_cv = cv2.imread(image_path)
-        if img_cv is None:
-            print("Failed to load image with OpenCV")
-            return False
-        
-        print(f"Image processed successfully: {img_cv.shape}")
-        return True
-        
+            
+            # Convert to RGB if needed
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+                print(f"Converted image to RGB mode")
+            
+            # Save the processed image
+            img.save(image_path, 'JPEG', quality=90)
+            print(f"Image processed and saved successfully")
+            return True
+            
     except Exception as e:
         print(f"Error processing uploaded image: {e}")
         return False
 
-def generate_pseudo_embedding(image_path):
-    """Use PIL image bytes to generate deterministic pseudo-embedding"""
+def generate_simple_embedding(image_path):
+    """Generate a simple embedding from image using Pillow"""
     try:
         with Image.open(image_path) as img:
-            img = img.resize((64, 64)).convert('L')
+            # Resize to small size for simple processing
+            img = img.resize((64, 64)).convert('L')  # Convert to grayscale
+            
+            # Convert to array and flatten
+            import numpy as np
             arr = np.array(img).flatten()[:128]
+            
+            # Pad or truncate to 128 dimensions
             if arr.size < 128:
                 arr = np.pad(arr, (0, 128 - arr.size), mode='wrap')
+            else:
+                arr = arr[:128]
+            
+            # Normalize to 0-1 range
             normalized = arr / 255.0
             return normalized
+            
     except Exception as e:
-        print(f"Error generating pseudo embedding: {e}")
+        print(f"Error generating embedding: {e}")
+        # Return random embedding as fallback
+        import numpy as np
         return np.random.rand(128)
 
-def quantize_embedding(embedding):
-    return np.clip(embedding * 128, -128, 127).astype(np.int8)
-
-def send_stream(socket_conn, quantized_embedding):
-    try:
-        socket_conn.sendall(b'START')
-        time.sleep(0.05)
-        socket_conn.sendall(quantized_embedding.tobytes())
-        time.sleep(0.05)
-        socket_conn.sendall(b'ENDD')
-        time.sleep(0.05)
-        print("Stream sent to PYNQ.")
-        return True
-    except Exception as e:
-        print(f"Send error: {e}")
-        return False
-
 def connect_to_pynq(max_retries=3):
+    """Attempt to connect to PYNQ board (simulated for server mode)"""
     IP = '172.16.151.175'
     PORT = 8887
+    
     for attempt in range(max_retries):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -146,9 +127,27 @@ def connect_to_pynq(max_retries=3):
             time.sleep(2)
     return None
 
+def send_data_to_pynq(sock, data):
+    """Send data to PYNQ board"""
+    try:
+        import numpy as np
+        # Convert data to bytes and send
+        data_bytes = np.array(data, dtype=np.int8).tobytes()
+        sock.sendall(b'START')
+        time.sleep(0.05)
+        sock.sendall(data_bytes)
+        time.sleep(0.05)
+        sock.sendall(b'ENDD')
+        time.sleep(0.05)
+        print("Data sent to PYNQ successfully.")
+        return True
+    except Exception as e:
+        print(f"Send error: {e}")
+        return False
+
 def main():
     image_path = "photo.jpg"
-    print("== FRONTEND-BASED FACE ATTENDANCE ==")
+    print("== PILLOW-ONLY ATTENDANCE SYSTEM ==")
     print(f"Environment check: {'SERVER' if is_server_environment() else 'LOCAL'}")
     
     # Process the uploaded image from frontend
@@ -156,20 +155,27 @@ def main():
         print("Uploaded image processed successfully")
     else:
         print("Failed to process uploaded image - using dummy image")
-        create_dummy_image_pil(image_path)
+        create_dummy_image(image_path)
     
-    # Generate embedding from the image (uploaded or dummy)
-    embedding = generate_pseudo_embedding(image_path)
-    quantized = quantize_embedding(embedding)
+    # Generate simple embedding from the image
+    embedding = generate_simple_embedding(image_path)
+    print(f"Generated embedding with {len(embedding)} dimensions")
+    
+    # Quantize embedding (simplified)
+    import numpy as np
+    quantized = np.clip(embedding * 128, -128, 127).astype(np.int8)
     
     # Connect to PYNQ and send data
     sock = connect_to_pynq()
     if sock:
-        send_stream(sock, quantized)
+        if send_data_to_pynq(sock, quantized):
+            print("[SUCCESS] Attendance sent to PYNQ.")
+        else:
+            print("[WARNING] Failed to send data to PYNQ.")
         sock.close()
-        print("[SUCCESS] Attendance sent.")
     else:
         print("[FALLBACK] PYNQ offline – simulate attendance stored.")
+        print("[SUCCESS] Attendance marked (simulated).")
 
 if __name__ == "__main__":
     main()

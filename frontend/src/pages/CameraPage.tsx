@@ -91,48 +91,59 @@ const CameraPage: React.FC = () => {
       
       setStream(newStream);
       
-      // Wait a bit for the video element to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait longer for the video element to be ready and rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (videoRef.current) {
+      // Try multiple times to find the video element
+      let videoElement: HTMLVideoElement | null = null;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (!videoElement && attempts < maxAttempts) {
+        attempts++;
+        console.log(`🎬 Attempt ${attempts}: Looking for video element...`);
+        
+        // Try ref first
+        if (videoRef.current) {
+          videoElement = videoRef.current;
+          console.log('✅ Found video element via ref');
+          break;
+        }
+        
+        // Try DOM selector
+        videoElement = document.querySelector('video');
+        if (videoElement) {
+          console.log('✅ Found video element via DOM selector');
+          break;
+        }
+        
+        // Wait a bit before next attempt
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      if (videoElement) {
         console.log('🎬 Setting video source...');
-        videoRef.current.srcObject = newStream;
+        videoElement.srcObject = newStream;
         
         // Wait for video to be ready
         await new Promise((resolve) => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => {
-              console.log('✅ Video metadata loaded');
-              console.log('📐 Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-              resolve(true);
-            };
-            
-            videoRef.current.oncanplay = () => {
-              console.log('✅ Video can play');
-            };
-            
-            videoRef.current.onerror = (e) => {
-              console.error('❌ Video error:', e);
-            };
-          }
+          videoElement.onloadedmetadata = () => {
+            console.log('✅ Video metadata loaded');
+            console.log('📐 Video dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+            resolve(true);
+          };
+          
+          videoElement.oncanplay = () => {
+            console.log('✅ Video can play');
+          };
+          
+          videoElement.onerror = (e) => {
+            console.error('❌ Video error:', e);
+          };
         });
       } else {
-        console.error('❌ Video ref is null - trying fallback approach');
-        // Fallback: try to find the video element by selector
-        const videoElement = document.querySelector('video');
-        if (videoElement) {
-          console.log('🎬 Found video element by selector, setting source...');
-          videoElement.srcObject = newStream;
-          await new Promise((resolve) => {
-            videoElement.onloadedmetadata = () => {
-              console.log('✅ Video metadata loaded (fallback)');
-              resolve(true);
-            };
-          });
-        } else {
-          console.error('❌ No video element found in DOM');
-          setError('Video element not found. Please refresh the page and try again.');
-        }
+        console.error('❌ No video element found after multiple attempts');
+        setError('Video element not found. Please refresh the page and try again.');
       }
     } catch (err: unknown) {
       console.error('❌ Error accessing camera:', err);
@@ -465,11 +476,11 @@ const CameraPage: React.FC = () => {
                 className="w-full h-full object-cover"
               />
               
-              {/* Fallback Button for Black Video Feed */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              {/* Fallback Button for Camera Issues */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
                 <button
                   onClick={proceedWithoutCamera}
-                  className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow-lg"
+                  className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow-lg"
                 >
                   Camera Not Working? Click Here
                 </button>

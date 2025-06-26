@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Notification from '../components/Notification';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [notification, setNotification] = useState<{
     message: string;
@@ -23,6 +23,20 @@ export default function Home() {
   const handleMarkAttendance = async () => {
     // Navigate to camera page for attendance marking
     navigate('/camera');
+  };
+
+  const handleAdminAccess = () => {
+    // Navigate to admin page
+    navigate('/admin');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   // Extract user info
@@ -46,6 +60,13 @@ export default function Home() {
     return 'Member';
   };
 
+  // Check if user is admin
+  const isAdmin = () => {
+    if (!user?.email) return false;
+    const email = user.email.toLowerCase();
+    return email.includes('admin') || email.includes('faculty') || email.includes('prof') || email.includes('dr.');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Notification Component */}
@@ -56,8 +77,8 @@ export default function Home() {
         onClose={hideNotification}
       />
 
-      {/* Enhanced Navigation Bar */}
-      {/*<nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20 sticky top-0 z-50">
+      {/* Navbar */}
+      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
@@ -73,34 +94,23 @@ export default function Home() {
                 <p className="text-sm text-gray-500">Smart Attendance Management</p>
               </div>
             </div>
-            
             <div className="flex items-center space-x-6">
-              
-              <div className="hidden md:block text-right">
-                <div className="text-sm font-medium text-gray-700">{formatTime(currentTime)}</div>
-                <div className="text-xs text-gray-500">{formatDate(currentTime)}</div>
-              </div>
-              
-              
-              <div className="flex items-center space-x-3">
-                <div className="hidden sm:block text-right">
-                  <p className="text-sm font-medium text-gray-700">{getUserName()}</p>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500">{getUserRole()}</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      IIITDM
-                    </span>
-                  </div>
-                </div>
-                <div className="h-10 w-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {getUserName().charAt(0).toUpperCase()}
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-medium text-gray-700">{getUserName()}</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-500">{getUserRole()}</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    IIITDM
                   </span>
                 </div>
               </div>
-              
+              <div className="h-10 w-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">
+                  {getUserName().charAt(0).toUpperCase()}
+                </span>
+              </div>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg font-medium"
               >
                 Sign Out
@@ -108,7 +118,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </nav>}
+      </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -167,6 +177,43 @@ export default function Home() {
               </div>
             </div>
           </div>
+          
+          {/* Admin Access Card - Only for admin users */}
+          {isAdmin() && (
+            <div 
+              onClick={handleAdminAccess}
+              className="group relative bg-gradient-to-br from-red-50 to-pink-100 p-8 rounded-3xl shadow-xl cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-red-200/50 hover:bg-gradient-to-br hover:from-red-100 hover:to-pink-200"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-400/10 to-pink-400/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="h-16 w-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                  </div>
+                  <span className="text-red-600 text-sm font-semibold px-3 py-1 bg-red-100 rounded-full">
+                    Admin
+                  </span>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                  Admin Dashboard
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Manage images, upload new reference photos, and oversee the attendance system with full administrative controls.
+                </p>
+                
+                <div className="mt-6 flex items-center text-red-600 font-medium group-hover:translate-x-1 transition-transform duration-200">
+                  <span>Access admin panel</span>
+                  <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* View History Card */}
           <div className="group bg-gradient-to-br from-green-50 to-emerald-100 p-8 rounded-3xl shadow-xl cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-green-200/50 hover:bg-gradient-to-br hover:from-green-100 hover:to-emerald-200">

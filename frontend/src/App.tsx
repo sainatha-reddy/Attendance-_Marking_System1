@@ -4,6 +4,9 @@ import { AuthProvider } from './contexts/AuthContext';
 // import Login from './pages/Login';
 import Home from './pages/Home';
 import CameraPage from './pages/CameraPage';
+import ImageUploadPage from './pages/ImageUploadPage';
+import ImageComparePage from './pages/ImageComparePage';
+import AdminPage from './pages/AdminPage';
 
 // Protected Route component
 // const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -27,6 +30,9 @@ function App() {
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/home" element={<Home />} />
           <Route path="/camera" element={<CameraPage />} />
+          <Route path="/upload" element={<ImageUploadPage />} />
+          <Route path="/compare" element={<ImageComparePage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </AuthProvider>

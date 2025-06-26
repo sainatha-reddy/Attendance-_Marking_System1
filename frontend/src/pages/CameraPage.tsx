@@ -1,5 +1,7 @@
+/// <reference types="vite/client" />
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Camera, ArrowLeft, RotateCcw, X, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 // Utility: Convert base64 Data URL to File object with correct MIME
@@ -19,6 +21,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 
 const CameraPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -27,6 +30,7 @@ const CameraPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   // Check if we're on HTTPS (required for camera access in production)
@@ -152,11 +156,11 @@ const CameraPage: React.FC = () => {
 
     // Add a timeout to detect if camera is not working
     const cameraTimeout = setTimeout(() => {
-      if (isLoading && !stream) {
-        console.log('⏰ Camera timeout - video feed may be black');
+      const videoEl = document.querySelector('video');
+      if (isLoading && (!stream || !videoEl || videoEl.readyState < 2)) {
         setError('Camera feed appears to be black. You can still try to capture an image or proceed without camera.');
       }
-    }, 5000); // 5 second timeout
+    }, 10000); // 10 second timeout
 
     // Monitor video element rendering
     const checkVideoElement = () => {
@@ -181,6 +185,11 @@ const CameraPage: React.FC = () => {
       clearTimeout(cameraTimeout);
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      // Also clear the video element's srcObject
+      const videoEl = videoRef.current || document.querySelector('video');
+      if (videoEl) {
+        videoEl.srcObject = null;
       }
     };
   }, [facingMode]);
@@ -218,17 +227,21 @@ const CameraPage: React.FC = () => {
       return;
     }
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Desired capture size
+    const captureWidth = 640;
+    const captureHeight = 480;
 
-    console.log('📸 Capturing image...');
-    console.log('📐 Canvas dimensions:', canvas.width, 'x', canvas.height);
-    console.log('🎬 Video ready state:', video.readyState);
-    console.log('🎬 Video current time:', video.currentTime);
+    // Center crop from the video
+    const sx = (video.videoWidth - captureWidth) / 2;
+    const sy = (video.videoHeight - captureHeight) / 2;
 
-    // Draw the video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.width = captureWidth;
+    canvas.height = captureHeight;
+    context.drawImage(
+      video,
+      sx, sy, captureWidth, captureHeight, // source rectangle
+      0, 0, captureWidth, captureHeight    // destination rectangle
+    );
 
     // Convert to data URL
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -254,6 +267,7 @@ const CameraPage: React.FC = () => {
     setIsProcessing(true);
     setError(null);
     setSuccess(false);
+    setAttendanceStatus(null);
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -262,15 +276,20 @@ const CameraPage: React.FC = () => {
       console.log('API URL:', apiUrl);
       console.log('Environment:', import.meta.env.MODE);
       console.log('VITE_API_URL set:', !!import.meta.env.VITE_API_URL);
+      console.log('User info:', user);
 
       // Convert data URL to File object using utility
       const file = dataURLtoFile(imageData, 'photo.jpg');
 
-      // Create FormData and append the file
+      // Create FormData and append the file and user information
       const formData = new FormData();
-      formData.append('image', file); // 'image' must match backend
+      formData.append('image', file);
+      formData.append('user_email', user?.email || 'unknown@example.com');
+      formData.append('user_name', user?.displayName || user?.email?.split('@')[0] || 'Unknown User');
 
       console.log('Sending request to:', `${apiUrl}/api/mark-attendance`);
+      console.log('User email:', user?.email);
+      console.log('User name:', user?.displayName || user?.email?.split('@')[0]);
       
       const backendResponse = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
@@ -288,7 +307,7 @@ const CameraPage: React.FC = () => {
         if (backendResponse.status === 500) {
           throw new Error(`Server error (500): ${errorText}`);
         } else if (backendResponse.status === 404) {
-          throw new Error(`API endpoint not found (404). Please check if the backend is deployed correctly.`);
+          throw new Error(`Reference image not found. Please contact admin to upload your reference image.`);
         } else if (backendResponse.status === 0) {
           throw new Error(`Network error: Unable to connect to backend server. Please check if the backend is running and the API URL is correct.`);
         } else {
@@ -301,11 +320,23 @@ const CameraPage: React.FC = () => {
 
       if (data.success) {
         setSuccess(true);
+        setAttendanceStatus(data.status);
+        
+        // Show success message with attendance status
+        const statusMessage = data.status === 'present' 
+          ? 'Attendance marked successfully! Status: PRESENT' 
+          : 'Attendance marked successfully! Status: ABSENT';
+        
+        console.log(statusMessage);
+        console.log('Face distance:', data.face_distance);
+        console.log('Threshold:', data.threshold);
+        
         setTimeout(() => {
           navigate('/home');
-        }, 2000);
+        }, 3000); // Give more time to read the status
       } else {
         setError(data.message || 'Failed to mark attendance');
+        setAttendanceStatus('absent');
       }
     } catch (error) {
       console.error('Error sending image to backend:', error);
@@ -315,8 +346,8 @@ const CameraPage: React.FC = () => {
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
           errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
-        } else if (error.message.includes('API endpoint not found')) {
-          errorMessage = 'Backend server is not available. Please contact support.';
+        } else if (error.message.includes('Reference image not found')) {
+          errorMessage = 'Reference image not found. Please contact admin to upload your reference image.';
         } else if (error.message.includes('Network error')) {
           errorMessage = 'Cannot connect to the attendance server. Please try again later.';
         } else {
@@ -325,6 +356,7 @@ const CameraPage: React.FC = () => {
       }
       
       setError(errorMessage);
+      setAttendanceStatus('absent');
     } finally {
       setIsProcessing(false);
     }
@@ -351,11 +383,29 @@ const CameraPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            attendanceStatus === 'present' ? 'bg-green-100' : 'bg-red-100'
+          }`}>
+            {attendanceStatus === 'present' ? (
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            ) : (
+              <X className="w-8 h-8 text-red-600" />
+            )}
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Attendance Marked!</h2>
-          <p className="text-gray-600 mb-6">Your attendance has been successfully recorded.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {attendanceStatus === 'present' ? 'Attendance Marked!' : 'Attendance Recorded'}
+          </h2>
+          <div className={`text-2xl font-bold mb-4 ${
+            attendanceStatus === 'present' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {attendanceStatus?.toUpperCase()}
+          </div>
+          <p className="text-gray-600 mb-6">
+            {attendanceStatus === 'present' 
+              ? 'Your attendance has been successfully recorded as PRESENT.'
+              : 'Your attendance has been recorded as ABSENT due to face mismatch.'
+            }
+          </p>
           <div className="animate-pulse">
             <p className="text-sm text-gray-500">Redirecting to home page...</p>
           </div>
@@ -471,14 +521,16 @@ const CameraPage: React.FC = () => {
               />
               
               {/* Fallback Button for Camera Issues */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                <button
-                  onClick={proceedWithoutCamera}
-                  className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow-lg"
-                >
-                  Camera Not Working? Click Here
-                </button>
-              </div>
+              {error && (
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                  <button
+                    onClick={proceedWithoutCamera}
+                    className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow-lg"
+                  >
+                    Camera Not Working? Click Here
+                  </button>
+                </div>
+              )}
               
               {/* Capture Button */}
               <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">

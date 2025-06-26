@@ -1,0 +1,142 @@
+[
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:26:26.048389",
+    "face_distance": 0.33174600048562036,
+    "threshold": 0.6,
+    "match": "True"
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:28:10.305560",
+    "face_distance": 0.4602591862903807,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:28:39.222174",
+    "face_distance": 0.365228743358786,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "absent",
+    "timestamp": "2025-06-25T13:29:00.446142",
+    "face_distance": 0.6122762238583058,
+    "threshold": 0.6,
+    "match": false
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:31:50.618011",
+    "face_distance": 0.3708055877378027,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:32:04.576762",
+    "face_distance": 0.39087674679338025,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:35:14.172637",
+    "face_distance": 0.3466248469535467,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:36:44.668675",
+    "face_distance": 0.42908811279388753,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:42:00.712918",
+    "face_distance": 0.3929553558936901,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:43:21.688455",
+    "face_distance": 0.37130869967280017,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:44:44.675898",
+    "face_distance": 0.395363139249068,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:46:29.193771",
+    "face_distance": 0.3873451019579377,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:49:27.471613",
+    "face_distance": 0.36898525352601397,
+    "threshold": 0.6,
+    "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-25T13:51:36.270659",
+    "face_distance": 0.49921003182966206,
+    "threshold": 0.6,
+    "match": true
+  }
+]

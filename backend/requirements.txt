@@ -1,2 +1,7 @@
-numpy==1.24.3
-pillow==11.2.1
+flask
+face_recognition
+numpy
+Pillow
+dlib
+python-dotenv
+supabase

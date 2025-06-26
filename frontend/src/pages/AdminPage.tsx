@@ -63,7 +63,6 @@ const AdminPage: React.FC = () => {
   const fetchImages = async () => {
     try {
       setLoading(true);
-      console.log('Fetching images from Firestore...');
       
       const imagesRef = collection(db, 'images');
       
@@ -90,10 +89,8 @@ const AdminPage: React.FC = () => {
         });
       });
       
-      console.log(`Fetched ${imagesData.length} images successfully`);
       setImages(imagesData.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()));
     } catch (error) {
-      console.error('Error fetching images:', error);
       let errorMessage = 'Failed to fetch images: ';
       
       if (error instanceof Error) {
@@ -127,10 +124,8 @@ const AdminPage: React.FC = () => {
 
     setUploading(true);
     try {
-      console.log('Starting upload process...');
       
       // Check if the uniqueId already exists in Firestore
-      console.log('Checking for existing uniqueId...');
       const existingDoc = await getDocs(collection(db, 'images'));
       if (existingDoc.docs.some(doc => doc.id === uniqueId)) {
         showNotification('This unique ID already exists. Please use a different one.', 'error');
@@ -141,7 +136,6 @@ const AdminPage: React.FC = () => {
       const fileExtension = selectedFile.name.split('.').pop();
       const supabasePath = `images/${uniqueId}.${fileExtension}`;
       
-      console.log('Uploading to Supabase Storage...');
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('attendance-images')
@@ -151,7 +145,6 @@ const AdminPage: React.FC = () => {
         throw new Error(`Supabase upload error: ${uploadError.message}`);
       }
 
-      console.log('Getting public URL from Supabase...');
       // Get public URL from Supabase
       const { data: urlData } = supabase.storage
         .from('attendance-images')
@@ -159,7 +152,6 @@ const AdminPage: React.FC = () => {
 
       const publicUrl = urlData.publicUrl;
       
-      console.log('Storing metadata in Firestore...');
       // Store metadata in Firestore with timeout
       const firestorePromise = setDoc(doc(db, 'images', uniqueId), {
         url: publicUrl,
@@ -177,7 +169,6 @@ const AdminPage: React.FC = () => {
 
       await Promise.race([firestorePromise, timeoutPromise]);
 
-      console.log('Upload completed successfully!');
       showNotification('Image uploaded successfully!', 'success');
       setSelectedFile(null);
       setImageName('');
@@ -185,11 +176,9 @@ const AdminPage: React.FC = () => {
       setUniqueId('');
       
       // Refresh the images list
-      console.log('Refreshing images list...');
       await fetchImages();
       
     } catch (error) {
-      console.error('Upload error:', error);
       let errorMessage = 'Upload failed: ';
       
       if (error instanceof Error) {
@@ -223,7 +212,6 @@ const AdminPage: React.FC = () => {
           .remove([supabasePath]);
 
         if (storageError) {
-          console.error('Supabase storage delete error:', storageError);
           // Continue with Firestore deletion even if storage deletion fails
         }
       }
@@ -234,7 +222,6 @@ const AdminPage: React.FC = () => {
       showNotification('Image deleted successfully!', 'success');
       fetchImages();
     } catch (error) {
-      console.error('Delete error:', error);
       showNotification('Failed to delete image', 'error');
     }
   };
@@ -255,7 +242,6 @@ const AdminPage: React.FC = () => {
       setImageDescription('');
       fetchImages();
     } catch (error) {
-      console.error('Update error:', error);
       showNotification('Failed to update image', 'error');
     }
   };

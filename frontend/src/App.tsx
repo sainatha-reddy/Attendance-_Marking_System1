@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-// import Login from './pages/Login';
+import Login from './pages/Login';
 import Home from './pages/Home';
 import CameraPage from './pages/CameraPage';
 import ImageUploadPage from './pages/ImageUploadPage';
@@ -27,7 +27,7 @@ function App() {
     >
       <AuthProvider>
         <Routes>
-          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/camera" element={<CameraPage />} />
           <Route path="/upload" element={<ImageUploadPage />} />

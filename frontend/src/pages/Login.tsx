@@ -9,9 +9,7 @@ export default function Login() {
 
   // Redirect if user is already logged in
   useEffect(() => {
-    console.log('Login component - user state:', user);
     if (user) {
-      console.log('User is authenticated, redirecting to /home');
       navigate('/home');
     }
   }, [user, navigate]);
@@ -20,7 +18,6 @@ export default function Login() {
   useEffect(() => {
     const checkAuthStatus = () => {
       if (user && window.location.pathname === '/login') {
-        console.log('Fallback: User authenticated but on login page, redirecting...');
         navigate('/home', { replace: true });
       }
     };
@@ -34,13 +31,10 @@ export default function Login() {
   }, [user, navigate]);
 
   const handleGoogleSignIn = async () => {
-    console.log('Starting Google sign-in process...');
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      console.log('Google sign-in initiated, redirect should happen automatically');
     } catch (error) {
-      console.error('Error signing in with Google:', error);
     } finally {
       setIsLoading(false);
     }

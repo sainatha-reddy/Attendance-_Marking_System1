@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Notification from '../components/Notification';
 
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user, logout, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [notification, setNotification] = useState<{
     message: string;
@@ -35,8 +35,13 @@ export default function Home() {
       await logout();
       navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
+      // Removed console.error('Logout error:', error);
     }
+  };
+
+  const handleSignIn = async () => {
+    await signInWithGoogle();
+    navigate('/login');
   };
 
   // Extract user info
@@ -66,6 +71,21 @@ export default function Home() {
     const email = user.email.toLowerCase();
     return email.includes('admin') || email.includes('faculty') || email.includes('prof') || email.includes('dr.');
   };
+
+  useEffect(() => {
+    // Stop all video streams when Home mounts
+    if (navigator.mediaDevices && 'getUserMedia' in navigator.mediaDevices) {
+      // Find all video elements and stop their streams
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        if (video.srcObject) {
+          const tracks = (video.srcObject as MediaStream).getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -109,12 +129,24 @@ export default function Home() {
                   {getUserName().charAt(0).toUpperCase()}
                 </span>
               </div>
-              <button
-                onClick={handleLogout}
-                className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg font-medium"
-              >
-                Sign Out
-              </button>
+              {user ? (
+                <button
+                  onClick={async () => {
+                    await logout();
+                    navigate('/login');
+                  }}
+                  className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg font-medium"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg font-medium"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         </div>

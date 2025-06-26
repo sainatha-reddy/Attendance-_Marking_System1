@@ -15,13 +15,17 @@ self.addEventListener('install', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
-  );
+  // Only handle navigation requests
+  if (
+    event.request.mode === 'navigate' &&
+    !event.request.url.includes('/api/')
+  ) {
+    event.respondWith(
+      fetch('/index.html')
+    );
+    return; // Prevent further handling
+  }
+  // For all other requests, do nothing (let default browser/network handle)
 });
 
 // Background sync for offline attendance marking
@@ -33,7 +37,6 @@ self.addEventListener('sync', (event) => {
 
 function doBackgroundSync() {
   // Handle background sync for attendance marking
-  console.log('Background sync triggered');
 }
 
 // Push notification handling

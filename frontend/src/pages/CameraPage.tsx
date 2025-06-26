@@ -39,13 +39,10 @@ const CameraPage: React.FC = () => {
   // Test camera availability
   const testCameraAvailability = async () => {
     try {
-      console.log('🔍 Testing camera availability...');
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log('📹 Available video devices:', videoDevices);
       return videoDevices.length > 0;
-    } catch (error) {
-      console.error('❌ Error enumerating devices:', error);
+    } catch {
       return false;
     }
   };
@@ -84,36 +81,27 @@ const CameraPage: React.FC = () => {
         audio: false
       };
 
-      console.log('🎥 Requesting camera access with constraints:', constraints);
-      console.log('🔒 Secure context:', isSecure);
-      console.log('📱 User agent:', navigator.userAgent);
+      
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('✅ Camera stream obtained:', newStream);
-      console.log('📹 Video tracks:', newStream.getVideoTracks());
-      console.log('🎤 Audio tracks:', newStream.getAudioTracks());
+      
       
       setStream(newStream);
       
       // Simple approach: wait and then try to set the video source
       setTimeout(() => {
-        console.log('🎬 Attempting to set video source...');
+       
         
         // Try to find video element
         const videoEl = document.querySelector('video');
-        console.log('🎬 Video element found:', !!videoEl);
         
         if (videoEl) {
-          console.log('🎬 Setting video source...');
           videoEl.srcObject = newStream;
           
           videoEl.onloadedmetadata = () => {
-            console.log('✅ Video metadata loaded');
-            console.log('📐 Video dimensions:', videoEl.videoWidth, 'x', videoEl.videoHeight);
           };
           
           videoEl.oncanplay = () => {
-            console.log('✅ Video can play');
           };
           
           videoEl.onerror = (e) => {
@@ -160,26 +148,18 @@ const CameraPage: React.FC = () => {
       if (isLoading && (!stream || !videoEl || videoEl.readyState < 2)) {
         setError('Camera feed appears to be black. You can still try to capture an image or proceed without camera.');
       }
-    }, 10000); // 10 second timeout
+    }, 600000); // 10 second timeout
 
     // Monitor video element rendering
     const checkVideoElement = () => {
       const videoEl = document.querySelector('video');
       console.log('🔍 Checking video element in DOM:', !!videoEl);
-      if (videoEl) {
-        console.log('✅ Video element found in DOM');
-        console.log('🎬 Video element properties:', {
-          srcObject: !!videoEl.srcObject,
-          readyState: videoEl.readyState,
-          videoWidth: videoEl.videoWidth,
-          videoHeight: videoEl.videoHeight
-        });
-      }
+      
     };
 
     // Check immediately and after a delay
     checkVideoElement();
-    setTimeout(checkVideoElement, 2000);
+    setTimeout(checkVideoElement, 5000);
 
     return () => {
       clearTimeout(cameraTimeout);
@@ -195,14 +175,12 @@ const CameraPage: React.FC = () => {
   }, [facingMode]);
 
   const captureImage = () => {
-    console.log('📸 Attempting to capture image...');
     
     // Try to get video element from ref first
     let video = videoRef.current;
     
     // Fallback: if ref is null, try to find video element by selector
     if (!video) {
-      console.log('🔄 Video ref is null, trying to find video element by selector...');
       video = document.querySelector('video');
     }
     
@@ -245,7 +223,6 @@ const CameraPage: React.FC = () => {
 
     // Convert to data URL
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    console.log('✅ Image captured, data URL length:', imageDataUrl.length);
     setCapturedImage(imageDataUrl);
 
     // Stop the camera stream after capturing
@@ -257,7 +234,6 @@ const CameraPage: React.FC = () => {
 
   // Fallback function to proceed without camera
   const proceedWithoutCamera = () => {
-    console.log('🔄 Proceeding without camera...');
     // Create a dummy image or proceed directly to backend
     const dummyImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
     setCapturedImage(dummyImage);
@@ -297,9 +273,7 @@ const CameraPage: React.FC = () => {
         // DO NOT set Content-Type header manually!
       });
 
-      console.log('Response status:', backendResponse.status);
-      console.log('Response headers:', Object.fromEntries(backendResponse.headers.entries()));
-
+      
       if (!backendResponse.ok) {
         const errorText = await backendResponse.text();
         console.error('Backend error response:', errorText);
@@ -328,8 +302,6 @@ const CameraPage: React.FC = () => {
           : 'Attendance marked successfully! Status: ABSENT';
         
         console.log(statusMessage);
-        console.log('Face distance:', data.face_distance);
-        console.log('Threshold:', data.threshold);
         
         setTimeout(() => {
           navigate('/home');

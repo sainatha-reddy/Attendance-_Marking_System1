@@ -39,12 +39,10 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Expose port
-EXPOSE 3001
-
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3001/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the application
-CMD ["python", "compare_api.py"] 
+EXPOSE 8080
+CMD ["gunicorn", "compare_api:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120"]

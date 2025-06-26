@@ -191,6 +191,11 @@ def mark_attendance():
             'status': 'absent'
         }), 500
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for Docker"""
+    return jsonify({'status': 'healthy', 'service': 'attendance-backend'}), 200
+
 @app.route('/upload-image', methods=['POST'])
 def upload_image():
     if 'image' not in request.files or 'unique_id' not in request.form:

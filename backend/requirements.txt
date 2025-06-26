@@ -6,3 +6,4 @@ Pillow
 dlib
 python-dotenv
 supabase
+gunicorn

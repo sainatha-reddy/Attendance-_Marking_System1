@@ -251,4 +251,14 @@ def compare_image():
         os.remove(uploaded_image_path)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3001, debug=True) 
+    # Get port from environment variable (Railway sets PORT)
+    port = int(os.environ.get('PORT', 3001))
+    
+    # Use production settings
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    
+    print(f"Starting Flask app on port {port}")
+    print(f"Debug mode: {debug_mode}")
+    print(f"Environment: {os.environ.get('FLASK_ENV', 'production')}")
+    
+    app.run(host='0.0.0.0', port=port, debug=debug_mode) 

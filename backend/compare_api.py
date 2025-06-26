@@ -15,7 +15,7 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://attendance-marking-system1.vercel.app"])
 
 # Supabase config
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://your-project.supabase.co')

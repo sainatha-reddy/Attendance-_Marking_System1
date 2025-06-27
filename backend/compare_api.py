@@ -15,7 +15,9 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins=["https://attendance-marking-system1.vercel.app"])
+CORS(app, origins=["https://attendance-marking-system1.vercel.app", "http://localhost:5173", "http://localhost:3000"], 
+     methods=["GET", "POST", "OPTIONS"], 
+     allow_headers=["Content-Type", "Authorization"])
 
 # Supabase config
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://your-project.supabase.co')
@@ -49,8 +51,15 @@ def mark_attendance():
     """
     Mark attendance by comparing captured image with reference image
     """
+    print(f"=== MARK ATTENDANCE CALLED ===")
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"Request form data: {dict(request.form)}")
+    print(f"Request files: {list(request.files.keys()) if request.files else 'No files'}")
+    
     try:
         if 'image' not in request.files:
+            print("No image in request.files")
             return jsonify({'success': False, 'message': 'No image provided'}), 400
         
         # Get the uploaded image
@@ -252,4 +261,28 @@ def compare_image():
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    return jsonify({'status': 'ok'}) 
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/test', methods=['GET', 'POST'])
+def api_test():
+    """Test endpoint to verify API routing is working"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'API routing is working',
+        'method': request.method,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/debug', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+def debug_route():
+    """Debug route to test all HTTP methods"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'Debug route working',
+        'method': request.method,
+        'headers': dict(request.headers),
+        'timestamp': datetime.now().isoformat()
+    })
+
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0', port=8080) 

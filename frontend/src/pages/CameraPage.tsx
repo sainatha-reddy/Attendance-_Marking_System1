@@ -248,12 +248,6 @@ const CameraPage: React.FC = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       
-      // Debug logging
-      console.log('API URL:', apiUrl);
-      console.log('Environment:', import.meta.env.MODE);
-      console.log('VITE_API_URL set:', !!import.meta.env.VITE_API_URL);
-      console.log('User info:', user);
-
       // Convert data URL to File object using utility
       const file = dataURLtoFile(imageData, 'photo.jpg');
 
@@ -262,10 +256,6 @@ const CameraPage: React.FC = () => {
       formData.append('image', file);
       formData.append('user_email', user?.email || 'unknown@example.com');
       formData.append('user_name', user?.displayName || user?.email?.split('@')[0] || 'Unknown User');
-
-      console.log('Sending request to:', `${apiUrl}/api/mark-attendance`);
-      console.log('User email:', user?.email);
-      console.log('User name:', user?.displayName || user?.email?.split('@')[0]);
       
       const backendResponse = await fetch(`${apiUrl}/api/mark-attendance`, {
         method: 'POST',
@@ -276,7 +266,6 @@ const CameraPage: React.FC = () => {
       
       if (!backendResponse.ok) {
         const errorText = await backendResponse.text();
-        console.error('Backend error response:', errorText);
         
         if (backendResponse.status === 500) {
           throw new Error(`Server error (500): ${errorText}`);
@@ -290,18 +279,10 @@ const CameraPage: React.FC = () => {
       }
 
       const data = await backendResponse.json();
-      console.log('Backend response data:', data);
 
       if (data.success) {
         setSuccess(true);
         setAttendanceStatus(data.status);
-        
-        // Show success message with attendance status
-        const statusMessage = data.status === 'present' 
-          ? 'Attendance marked successfully! Status: PRESENT' 
-          : 'Attendance marked successfully! Status: ABSENT';
-        
-        console.log(statusMessage);
         
         setTimeout(() => {
           navigate('/home');
@@ -311,8 +292,6 @@ const CameraPage: React.FC = () => {
         setAttendanceStatus('absent');
       }
     } catch (error) {
-      console.error('Error sending image to backend:', error);
-      
       let errorMessage = 'Failed to send image to server. Please try again.';
       
       if (error instanceof Error) {
@@ -354,25 +333,25 @@ const CameraPage: React.FC = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-md w-full text-center">
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
             attendanceStatus === 'present' ? 'bg-green-100' : 'bg-red-100'
           }`}>
             {attendanceStatus === 'present' ? (
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
             ) : (
-              <X className="w-8 h-8 text-red-600" />
+              <X className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
             )}
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             {attendanceStatus === 'present' ? 'Attendance Marked!' : 'Attendance Recorded'}
           </h2>
-          <div className={`text-2xl font-bold mb-4 ${
+          <div className={`text-2xl sm:text-3xl font-bold mb-4 ${
             attendanceStatus === 'present' ? 'text-green-600' : 'text-red-600'
           }`}>
             {attendanceStatus?.toUpperCase()}
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">
             {attendanceStatus === 'present' 
               ? 'Your attendance has been successfully recorded as PRESENT.'
               : 'Your attendance has been recorded as ABSENT due to face mismatch.'
@@ -430,16 +409,19 @@ const CameraPage: React.FC = () => {
         <div className="flex justify-between items-center p-4">
           <button
             onClick={goBack}
-            className="flex items-center justify-center w-10 h-10 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-colors"
+            className="flex items-center justify-center w-12 h-12 sm:w-10 sm:h-10 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           
-          <h1 className="text-white font-semibold">Camera</h1>
+          <div className="text-center">
+            <h1 className="text-white font-semibold text-lg sm:text-xl">Mark Attendance</h1>
+            <p className="text-white/70 text-xs sm:text-sm">Position your face in the frame</p>
+          </div>
           
           <button
             onClick={switchCamera}
-            className="flex items-center justify-center w-10 h-10 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-colors"
+            className="flex items-center justify-center w-12 h-12 sm:w-10 sm:h-10 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-colors"
           >
             <RotateCcw className="w-5 h-5" />
           </button>

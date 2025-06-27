@@ -51,15 +51,8 @@ def mark_attendance():
     """
     Mark attendance by comparing captured image with reference image
     """
-    print(f"=== MARK ATTENDANCE CALLED ===")
-    print(f"Request method: {request.method}")
-    print(f"Request headers: {dict(request.headers)}")
-    print(f"Request form data: {dict(request.form)}")
-    print(f"Request files: {list(request.files.keys()) if request.files else 'No files'}")
-    
     try:
         if 'image' not in request.files:
-            print("No image in request.files")
             return jsonify({'success': False, 'message': 'No image provided'}), 400
         
         # Get the uploaded image
@@ -75,14 +68,9 @@ def mark_attendance():
         else:
             unique_id = user_email.split('@')[0].lower()
         
-        print(f"Processing attendance for user: {user_name} ({user_email}) with unique_id: {unique_id}")
-        
         # First, try to get the reference image from Supabase
         try:
             ref_filename = f"images/{unique_id}.jpg"
-            print(f"Looking for reference image: {ref_filename}")
-            
-            print("Supabase config:", SUPABASE_URL, BUCKET_NAME, ref_filename)
             
             # Download reference image from Supabase Storage
             ref_bytes = supabase.storage.from_(BUCKET_NAME).download(ref_filename)
@@ -92,10 +80,7 @@ def mark_attendance():
                 ref_temp.write(ref_bytes)
                 ref_image_path = ref_temp.name
             
-            print("Reference image downloaded successfully")
-            
         except Exception as e:
-            print(f"Reference image not found: {e}")
             return jsonify({
                 'success': False, 
                 'message': 'Reference image not found. Please contact admin to upload your reference image.',
@@ -106,8 +91,6 @@ def mark_attendance():
         with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as up_temp:
             uploaded_file.save(up_temp.name)
             uploaded_image_path = up_temp.name
-        
-        print("Uploaded image saved to temp file")
         
         # Load images and compute face encodings
         try:
@@ -141,8 +124,6 @@ def mark_attendance():
             threshold = 0.6
             match = distance < threshold
             
-            print(f"Face comparison - Distance: {distance:.4f}, Threshold: {threshold}, Match: {match}")
-            
             # Save attendance record locally
             attendance_status = 'present' if match else 'absent'
             
@@ -163,9 +144,8 @@ def mark_attendance():
             try:
                 captured_filename = f"attendance_captures/{unique_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                 supabase.storage.from_(BUCKET_NAME).upload(captured_filename, uploaded_file)
-                print(f"Captured image saved to Supabase: {captured_filename}")
             except Exception as storage_error:
-                print(f"Supabase storage error: {storage_error}")
+                pass
             
             return jsonify({
                 'success': True,
@@ -177,7 +157,6 @@ def mark_attendance():
             })
             
         except Exception as e:
-            print(f"Face recognition error: {e}")
             return jsonify({
                 'success': False, 
                 'message': f'Face recognition error: {str(e)}',
@@ -193,7 +172,6 @@ def mark_attendance():
                 pass
                 
     except Exception as e:
-        print(f"General error in mark_attendance: {e}")
         return jsonify({
             'success': False, 
             'message': f'Server error: {str(e)}',
@@ -262,27 +240,6 @@ def compare_image():
 @app.route('/test', methods=['GET', 'POST'])
 def test():
     return jsonify({'status': 'ok'})
-
-@app.route('/api/test', methods=['GET', 'POST'])
-def api_test():
-    """Test endpoint to verify API routing is working"""
-    return jsonify({
-        'status': 'ok',
-        'message': 'API routing is working',
-        'method': request.method,
-        'timestamp': datetime.now().isoformat()
-    })
-
-@app.route('/debug', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def debug_route():
-    """Debug route to test all HTTP methods"""
-    return jsonify({
-        'status': 'ok',
-        'message': 'Debug route working',
-        'method': request.method,
-        'headers': dict(request.headers),
-        'timestamp': datetime.now().isoformat()
-    })
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8080) 

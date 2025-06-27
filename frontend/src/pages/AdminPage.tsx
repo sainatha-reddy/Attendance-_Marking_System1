@@ -44,7 +44,7 @@ const AdminPage: React.FC = () => {
   const isAdmin = () => {
     if (!user?.email) return false;
     const email = user.email.toLowerCase();
-    return email.includes('admin') || email.includes('faculty') || email.includes('prof') || email.includes('dr.')|| email.includes('cs23i1010');
+    return email.includes('cs23i1010')|| email.includes('raghavans');
   };
 
   useEffect(() => {

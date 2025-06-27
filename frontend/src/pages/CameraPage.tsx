@@ -36,6 +36,14 @@ const CameraPage: React.FC = () => {
   // Check if we're on HTTPS (required for camera access in production)
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
 
+  // Authentication check
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+  }, [user, navigate]);
+
   // Test camera availability
   const testCameraAvailability = async () => {
     try {

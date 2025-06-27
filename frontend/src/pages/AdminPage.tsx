@@ -40,18 +40,7 @@ const AdminPage: React.FC = () => {
     isVisible: false
   });
 
-  // Check if user is admin
-  const isAdmin = () => {
-    if (!user?.email) return false;
-    const email = user.email.toLowerCase();
-    return email.includes('cs23i1010')|| email.includes('raghavans');
-  };
-
   useEffect(() => {
-    if (!isAdmin()) {
-      navigate('/home');
-      return;
-    }
     fetchImages();
   }, [user, navigate]);
 
@@ -263,10 +252,6 @@ const AdminPage: React.FC = () => {
     image.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     image.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  if (!isAdmin()) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

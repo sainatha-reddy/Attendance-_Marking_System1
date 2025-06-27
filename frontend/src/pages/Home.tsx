@@ -87,6 +87,14 @@ export default function Home() {
     }
   }, []);
 
+  // Authentication check
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+  }, [user, navigate]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Notification Component */}

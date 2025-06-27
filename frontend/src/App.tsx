@@ -7,7 +7,7 @@ import CameraPage from './pages/CameraPage';
 import ImageUploadPage from './pages/ImageUploadPage';
 import ImageComparePage from './pages/ImageComparePage';
 import AdminPage from './pages/AdminPage';
-import { AdminRoute } from './components/ProtectedRoute';
+import ProtectedRoute, { AdminRoute } from './components/ProtectedRoute';
 
 // Protected Route component
 // const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -29,16 +29,42 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/camera" element={<CameraPage />} />
-          <Route path="/upload" element={<ImageUploadPage />} />
-          <Route path="/compare" element={<ImageComparePage />} />
+          <Route path="/auth" element={<Login />} />
+          <Route path="/home" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/camera" element={
+            <ProtectedRoute>
+              <CameraPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/upload" element={
+            <ProtectedRoute>
+              <ImageUploadPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/compare" element={
+            <ProtectedRoute>
+              <ImageComparePage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin" element={
             <AdminRoute>
               <AdminPage />
             </AdminRoute>
           } />
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>

@@ -9,11 +9,16 @@
     --border: 214.3 31.8% 91.4%;
   }
 
+  /* Reset default browser borders and outlines */
   * {
-    @apply border;
-    border-color: hsl(var(--border));
+    outline: none;
   }
-  
+
+  /* Remove default borders from common elements that shouldn't have them */
+  div, span, p, h1, h2, h3, h4, h5, h6, section, article, aside, nav, header, footer, main {
+    border: none;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;

@@ -7,6 +7,7 @@ import CameraPage from './pages/CameraPage';
 import ImageUploadPage from './pages/ImageUploadPage';
 import ImageComparePage from './pages/ImageComparePage';
 import AdminPage from './pages/AdminPage';
+import { AdminRoute } from './components/ProtectedRoute';
 
 // Protected Route component
 // const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -32,7 +33,11 @@ function App() {
           <Route path="/camera" element={<CameraPage />} />
           <Route path="/upload" element={<ImageUploadPage />} />
           <Route path="/compare" element={<ImageComparePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          } />
           <Route path="/" element={<Home />} />
         </Routes>
       </AuthProvider>

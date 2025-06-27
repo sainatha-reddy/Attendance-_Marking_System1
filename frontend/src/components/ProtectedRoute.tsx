@@ -6,6 +6,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated } = useAuth();
 
@@ -16,4 +20,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
+const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+
+  // Check if user is authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Check if user is admin
+  const isAdmin = () => {
+    if (!user?.email) return false;
+    const email = user.email.toLowerCase();
+    return email.includes('cs23i1010') || email.includes('raghavans') || email.includes('admin');
+  };
+
+  if (!isAdmin()) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 export default ProtectedRoute;
+export { AdminRoute };

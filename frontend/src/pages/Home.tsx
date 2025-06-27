@@ -65,6 +65,13 @@ export default function Home() {
     return 'Member';
   };
 
+  // Check if user is admin
+  const isAdmin = () => {
+    if (!user?.email) return false;
+    const email = user.email.toLowerCase();
+    return email.includes('cs23i1010') || email.includes('raghavans') || email.includes('admin');
+  };
+
   useEffect(() => {
     // Stop all video streams when Home mounts
     if (navigator.mediaDevices && 'getUserMedia' in navigator.mediaDevices) {
@@ -114,6 +121,11 @@ export default function Home() {
                   <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                     <span>Welcome,</span>
                     <span className="font-medium text-gray-800">{getUserName()}</span>
+                    {isAdmin() && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Admin
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={handleLogout}
@@ -192,40 +204,42 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Admin Access Card */}
-          <div 
-            onClick={handleAdminAccess}
-            className="group relative bg-gradient-to-br from-purple-50 to-pink-100 p-6 sm:p-8 rounded-3xl shadow-xl cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-purple-200/50 hover:bg-gradient-to-br hover:from-purple-100 hover:to-pink-200"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <svg className="h-7 w-7 sm:h-8 sm:w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          {/* Admin Access Card - Only for admin users */}
+          {isAdmin() && (
+            <div 
+              onClick={handleAdminAccess}
+              className="group relative bg-gradient-to-br from-purple-50 to-pink-100 p-6 sm:p-8 rounded-3xl shadow-xl cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-purple-200/50 hover:bg-gradient-to-br hover:from-purple-100 hover:to-pink-200"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-7 w-7 sm:h-8 sm:w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <span className="text-purple-600 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 bg-purple-100 rounded-full">
+                    Admin
+                  </span>
+                </div>
+                
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
+                  Admin Panel
+                </h3>
+                <p className="text-gray-600 text-sm sm:text-base mb-6">
+                  Manage users, view attendance records, and upload reference images
+                </p>
+                
+                <div className="flex items-center text-purple-600 font-semibold text-sm sm:text-base group-hover:translate-x-1 transition-transform duration-300">
+                  Access Panel
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <span className="text-purple-600 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 bg-purple-100 rounded-full">
-                  Admin
-                </span>
-              </div>
-              
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
-                Admin Panel
-              </h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-6">
-                Manage users, view attendance records, and upload reference images
-              </p>
-              
-              <div className="flex items-center text-purple-600 font-semibold text-sm sm:text-base group-hover:translate-x-1 transition-transform duration-300">
-                Access Panel
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Stats Section */}

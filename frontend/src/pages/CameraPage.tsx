@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Camera, ArrowLeft, RotateCcw, X, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { supabase } from '../config/supabase';
 
 // Utility: Convert base64 Data URL to File object with correct MIME
 function dataURLtoFile(dataUrl: string, filename: string): File {
@@ -34,6 +35,7 @@ const CameraPage: React.FC = () => {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [attendanceAllowed, setAttendanceAllowed] = useState<boolean>(true);
   const [attendanceWindowMsg, setAttendanceWindowMsg] = useState<string>('');
+  const [loadingWindow, setLoadingWindow] = useState<boolean>(true);
 
   // Check if we're on HTTPS (required for camera access in production)
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
@@ -340,24 +342,33 @@ const CameraPage: React.FC = () => {
     navigate('/home');
   };
 
+  // Fetch attendance window from Supabase
   useEffect(() => {
-    const start = localStorage.getItem('attendanceStart');
-    const end = localStorage.getItem('attendanceEnd');
-    if (start && end) {
-      const now = new Date();
-      const startTime = new Date(start);
-      const endTime = new Date(end);
-      if (now >= startTime && now <= endTime) {
-        setAttendanceAllowed(true);
-        setAttendanceWindowMsg('Attendance is open.');
+    const fetchWindow = async () => {
+      setLoadingWindow(true);
+      const { data } = await supabase
+        .from('attendance_window')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      if (data && data.start && data.end) {
+        const now = new Date();
+        const startTime = new Date(data.start);
+        const endTime = new Date(data.end);
+        if (now >= startTime && now <= endTime) {
+          setAttendanceAllowed(true);
+          setAttendanceWindowMsg('Attendance is open.');
+        } else {
+          setAttendanceAllowed(false);
+          setAttendanceWindowMsg(`Attendance is only allowed from ${startTime.toLocaleString()} to ${endTime.toLocaleString()}`);
+        }
       } else {
         setAttendanceAllowed(false);
-        setAttendanceWindowMsg(`Attendance is only allowed from ${startTime.toLocaleString()} to ${endTime.toLocaleString()}`);
+        setAttendanceWindowMsg('Attendance window is not set. Please contact admin.');
       }
-    } else {
-      setAttendanceAllowed(false);
-      setAttendanceWindowMsg('Attendance window is not set. Please contact admin.');
-    }
+      setLoadingWindow(false);
+    };
+    fetchWindow();
   }, []);
 
   if (success) {
@@ -445,6 +456,18 @@ const CameraPage: React.FC = () => {
           >
             Back to Home
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingWindow) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Checking Attendance Window...</h2>
+          <p className="text-gray-700 mb-4">Please wait while we check if attendance is open.</p>
         </div>
       </div>
     );

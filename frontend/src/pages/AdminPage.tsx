@@ -23,9 +23,28 @@ const AdminPage: React.FC = () => {
     isVisible: false
   });
 
-  // Attendance window state
-  const [attendanceStart, setAttendanceStart] = useState<string>(() => localStorage.getItem('attendanceStart') || '');
-  const [attendanceEnd, setAttendanceEnd] = useState<string>(() => localStorage.getItem('attendanceEnd') || '');
+  // Attendance window state (now from Supabase)
+  const [attendanceStart, setAttendanceStart] = useState<string>('');
+  const [attendanceEnd, setAttendanceEnd] = useState<string>('');
+  const [loadingWindow, setLoadingWindow] = useState<boolean>(true);
+
+  // Fetch attendance window from Supabase on mount
+  React.useEffect(() => {
+    const fetchWindow = async () => {
+      setLoadingWindow(true);
+      const { data } = await supabase
+        .from('attendance_window')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      if (data) {
+        setAttendanceStart(data.start || '');
+        setAttendanceEnd(data.end || '');
+      }
+      setLoadingWindow(false);
+    };
+    fetchWindow();
+  }, []);
 
   const showNotification = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
     setNotification({ message, type, isVisible: true });
@@ -107,24 +126,28 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // Save attendance window to localStorage
-  const handleAttendanceWindowSave = (e: React.FormEvent) => {
+  // Save attendance window to Supabase
+  const handleAttendanceWindowSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!attendanceStart || !attendanceEnd) {
       showNotification('Please set both start and end time.', 'error');
       return;
     }
-    localStorage.setItem('attendanceStart', attendanceStart);
-    localStorage.setItem('attendanceEnd', attendanceEnd);
-    showNotification('Attendance window updated!', 'success');
+    const { error } = await supabase
+      .from('attendance_window')
+      .upsert([{ id: 1, start: attendanceStart, end: attendanceEnd }]);
+    if (error) {
+      showNotification('Failed to update attendance window.', 'error');
+    } else {
+      showNotification('Attendance window updated!', 'success');
+    }
   };
 
   // Helper to clear window
-  const clearAttendanceWindow = () => {
+  const clearAttendanceWindow = async () => {
     setAttendanceStart('');
     setAttendanceEnd('');
-    localStorage.removeItem('attendanceStart');
-    localStorage.removeItem('attendanceEnd');
+    await supabase.from('attendance_window').upsert([{ id: 1, start: '', end: '' }]);
     showNotification('Attendance window cleared.', 'info');
   };
 
@@ -232,43 +255,47 @@ const AdminPage: React.FC = () => {
         {/* Attendance Window Section */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-xl font-bold mb-4 text-gray-800">Set Attendance Window</h2>
-          <form onSubmit={handleAttendanceWindowSave} className="space-y-4 md:flex md:space-x-6 md:space-y-0 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
-              <input
-                type="datetime-local"
-                value={attendanceStart}
-                onChange={e => setAttendanceStart(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
-              <input
-                type="datetime-local"
-                value={attendanceEnd}
-                onChange={e => setAttendanceEnd(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={clearAttendanceWindow}
-                className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
-              >
-                Clear
-              </button>
-            </div>
-          </form>
+          {loadingWindow ? (
+            <div className="text-gray-500">Loading attendance window...</div>
+          ) : (
+            <form onSubmit={handleAttendanceWindowSave} className="space-y-4 md:flex md:space-x-6 md:space-y-0 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  value={attendanceStart}
+                  onChange={e => setAttendanceStart(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  value={attendanceEnd}
+                  onChange={e => setAttendanceEnd(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAttendanceWindow}
+                  className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+          )}
           <div className="mt-4 text-sm text-gray-600">
             {attendanceStart && attendanceEnd ? (
               <>

@@ -38,8 +38,8 @@ const AdminPage: React.FC = () => {
         .eq('id', 1)
         .single();
       if (data) {
-        setAttendanceStart(data.start || '');
-        setAttendanceEnd(data.end || '');
+        setAttendanceStart(data.start_time || '');
+        setAttendanceEnd(data.end_time || '');
       }
       setLoadingWindow(false);
     };
@@ -135,7 +135,7 @@ const AdminPage: React.FC = () => {
     }
     const { error } = await supabase
       .from('attendance_window')
-      .upsert([{ id: 1, start: attendanceStart, end: attendanceEnd }]);
+      .upsert([{ id: 1, start_time: attendanceStart, end_time: attendanceEnd }]);
     if (error) {
       showNotification('Failed to update attendance window.', 'error');
     } else {
@@ -147,7 +147,7 @@ const AdminPage: React.FC = () => {
   const clearAttendanceWindow = async () => {
     setAttendanceStart('');
     setAttendanceEnd('');
-    await supabase.from('attendance_window').upsert([{ id: 1, start: '', end: '' }]);
+    await supabase.from('attendance_window').upsert([{ id: 1, start_time: '', end_time: '' }]);
     showNotification('Attendance window cleared.', 'info');
   };
 

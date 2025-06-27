@@ -351,10 +351,10 @@ const CameraPage: React.FC = () => {
         .select('*')
         .eq('id', 1)
         .single();
-      if (data && data.start && data.end) {
+      if (data && data.start_time && data.end_time) {
         const now = new Date();
-        const startTime = new Date(data.start);
-        const endTime = new Date(data.end);
+        const startTime = new Date(data.start_time);
+        const endTime = new Date(data.end_time);
         if (now >= startTime && now <= endTime) {
           setAttendanceAllowed(true);
           setAttendanceWindowMsg('Attendance is open.');

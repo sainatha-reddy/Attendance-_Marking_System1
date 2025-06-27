@@ -23,6 +23,10 @@ const AdminPage: React.FC = () => {
     isVisible: false
   });
 
+  // Attendance window state
+  const [attendanceStart, setAttendanceStart] = useState<string>(() => localStorage.getItem('attendanceStart') || '');
+  const [attendanceEnd, setAttendanceEnd] = useState<string>(() => localStorage.getItem('attendanceEnd') || '');
+
   const showNotification = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
     setNotification({ message, type, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
@@ -101,6 +105,27 @@ const AdminPage: React.FC = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  // Save attendance window to localStorage
+  const handleAttendanceWindowSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!attendanceStart || !attendanceEnd) {
+      showNotification('Please set both start and end time.', 'error');
+      return;
+    }
+    localStorage.setItem('attendanceStart', attendanceStart);
+    localStorage.setItem('attendanceEnd', attendanceEnd);
+    showNotification('Attendance window updated!', 'success');
+  };
+
+  // Helper to clear window
+  const clearAttendanceWindow = () => {
+    setAttendanceStart('');
+    setAttendanceEnd('');
+    localStorage.removeItem('attendanceStart');
+    localStorage.removeItem('attendanceEnd');
+    showNotification('Attendance window cleared.', 'info');
   };
 
   return (
@@ -201,6 +226,57 @@ const AdminPage: React.FC = () => {
               <li>• Supported formats: JPG, PNG, GIF</li>
               <li>• Image will be used for attendance verification</li>
             </ul>
+          </div>
+        </div>
+
+        {/* Attendance Window Section */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Set Attendance Window</h2>
+          <form onSubmit={handleAttendanceWindowSave} className="space-y-4 md:flex md:space-x-6 md:space-y-0 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
+              <input
+                type="datetime-local"
+                value={attendanceStart}
+                onChange={e => setAttendanceStart(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
+              <input
+                type="datetime-local"
+                value={attendanceEnd}
+                onChange={e => setAttendanceEnd(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+            <div className="flex space-x-2">
+              <button
+                type="submit"
+                className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={clearAttendanceWindow}
+                className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
+              >
+                Clear
+              </button>
+            </div>
+          </form>
+          <div className="mt-4 text-sm text-gray-600">
+            {attendanceStart && attendanceEnd ? (
+              <>
+                <span className="font-semibold text-blue-700">Attendance allowed from:</span> {new Date(attendanceStart).toLocaleString()} <span className="font-semibold text-blue-700">to</span> {new Date(attendanceEnd).toLocaleString()}
+              </>
+            ) : (
+              <span className="text-red-500">Attendance window not set.</span>
+            )}
           </div>
         </div>
       </div>

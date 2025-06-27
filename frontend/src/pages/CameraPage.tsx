@@ -32,6 +32,8 @@ const CameraPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [attendanceAllowed, setAttendanceAllowed] = useState<boolean>(true);
+  const [attendanceWindowMsg, setAttendanceWindowMsg] = useState<string>('');
 
   // Check if we're on HTTPS (required for camera access in production)
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
@@ -338,6 +340,26 @@ const CameraPage: React.FC = () => {
     navigate('/home');
   };
 
+  useEffect(() => {
+    const start = localStorage.getItem('attendanceStart');
+    const end = localStorage.getItem('attendanceEnd');
+    if (start && end) {
+      const now = new Date();
+      const startTime = new Date(start);
+      const endTime = new Date(end);
+      if (now >= startTime && now <= endTime) {
+        setAttendanceAllowed(true);
+        setAttendanceWindowMsg('Attendance is open.');
+      } else {
+        setAttendanceAllowed(false);
+        setAttendanceWindowMsg(`Attendance is only allowed from ${startTime.toLocaleString()} to ${endTime.toLocaleString()}`);
+      }
+    } else {
+      setAttendanceAllowed(false);
+      setAttendanceWindowMsg('Attendance window is not set. Please contact admin.');
+    }
+  }, []);
+
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
@@ -405,6 +427,24 @@ const CameraPage: React.FC = () => {
               Go Back
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!attendanceAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Attendance Not Allowed</h2>
+          <p className="text-gray-700 mb-4">{attendanceWindowMsg}</p>
+          <button
+            onClick={() => navigate('/home')}
+            className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-600 transition-all duration-200"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );

@@ -250,7 +250,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Stats Section */}
+        {/* Stats Section
         <div className="mt-12 sm:mt-16">
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 sm:p-8 shadow-xl border border-white/20">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 text-center">
@@ -288,7 +288,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   );

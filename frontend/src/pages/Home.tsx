@@ -82,28 +82,30 @@ export default function Home() {
       
       // Request Bluetooth permission and scan for devices
       const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: false,
-        filters: [
-          {
-            address: "B0:D2:78:48:3E:5A"  // Your specific beacon address
-          }
-        ],
-        optionalServices: []
+        acceptAllDevices: true,
+        optionalServices: ['1800', '1801', '1802', '1803', '1804', '1805', '1806', '1807', '1808', '1809', '180A', '180B', '180C', '180D', '180E', '180F']
       });
 
-      console.log("✅ BLE device found:", device.name);
-      
-      // If we get here, the device was found
-      setNotification({
-        message: "Beacon detected! Proceeding to camera page.",
-        type: 'success',
-        isVisible: true
-      });
+      // Check if the found device is our target beacon
+      if (device.id.toLowerCase() === "b0:d2:78:48:3e:5a" || 
+          device.name?.toLowerCase().includes("beacon") ||
+          device.name?.toLowerCase().includes("attendance")) {
+        console.log("✅ Target beacon found:", device.name);
+        
+        // If we get here, the device was found
+        setNotification({
+          message: "Beacon detected! Proceeding to camera page.",
+          type: 'success',
+          isVisible: true
+        });
 
-      // Navigate to camera page for attendance marking
-      setTimeout(() => {
-        navigate('/camera');
-      }, 1500);
+        // Navigate to camera page for attendance marking
+        setTimeout(() => {
+          navigate('/camera');
+        }, 1500);
+      } else {
+        throw new Error("Target beacon not found. Please ensure you are near the correct beacon device.");
+      }
 
     } catch (error: unknown) {
       console.error('BLE scan error:', error);
@@ -124,6 +126,12 @@ export default function Home() {
         } else if (error.name === 'NotSupportedError') {
           setNotification({
             message: "Bluetooth not supported on this device. Please use a device with Bluetooth capability.",
+            type: 'error',
+            isVisible: true
+          });
+        } else if (error.message.includes("Target beacon not found")) {
+          setNotification({
+            message: "Wrong device selected. Please select the attendance beacon device.",
             type: 'error',
             isVisible: true
           });

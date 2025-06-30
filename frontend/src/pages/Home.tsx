@@ -3,50 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Notification from '../components/Notification';
 
-// TypeScript declarations for Web Bluetooth API
-declare global {
-  interface Navigator {
-    bluetooth?: Bluetooth;
-  }
-  
-  interface Bluetooth {
-    requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
-  }
-  
-  interface RequestDeviceOptions {
-    acceptAllDevices?: boolean;
-    filters?: BluetoothRequestDeviceFilter[];
-    optionalServices?: string[];
-  }
-  
-  interface BluetoothRequestDeviceFilter {
-    address?: string;
-    name?: string;
-    namePrefix?: string;
-    services?: string[];
-  }
-  
-  interface BluetoothDevice {
-    id: string;
-    name?: string;
-    gatt?: BluetoothRemoteGATTServer;
-  }
-  
-  interface BluetoothRemoteGATTServer {
-    connect(): Promise<BluetoothRemoteGATTServer>;
-    getPrimaryService(service: string): Promise<BluetoothRemoteGATTService>;
-  }
-  
-  interface BluetoothRemoteGATTService {
-    getCharacteristic(characteristic: string): Promise<BluetoothRemoteGATTCharacteristic>;
-  }
-  
-  interface BluetoothRemoteGATTCharacteristic {
-    readValue(): Promise<DataView>;
-    writeValue(value: BufferSource): Promise<void>;
-  }
-}
-
 export default function Home() {
   const { user, logout, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -59,98 +15,14 @@ export default function Home() {
     type: 'info',
     isVisible: false
   });
-  const [isCheckingBLE, setIsCheckingBLE] = useState(false);
 
   const hideNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));
   };
 
   const handleMarkAttendance = async () => {
-    try {
-      setIsCheckingBLE(true);
-      // Check if Web Bluetooth API is supported
-      if (!navigator.bluetooth) {
-        setNotification({
-          message: "Bluetooth is not supported in this browser. Please use Chrome, Edge, or Opera.",
-          type: 'error',
-          isVisible: true
-        });
-        return;
-      }
-
-      console.log("🔍 Starting BLE scan from device...");
-      
-      // Request Bluetooth permission and scan for devices
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true
-      });
-
-      // Check if the found device is our target beacon
-      if (device.id.toLowerCase() === "b0:d2:78:48:3e:5a" || 
-          device.name?.toLowerCase().includes("beacon") ||
-          device.name?.toLowerCase().includes("attendance")) {
-        console.log("✅ Target beacon found:", device.name);
-        
-        // If we get here, the device was found
-        setNotification({
-          message: "Beacon detected! Proceeding to camera page.",
-          type: 'success',
-          isVisible: true
-        });
-
-        // Navigate to camera page for attendance marking
-        setTimeout(() => {
-          navigate('/camera');
-        }, 1500);
-      } else {
-        throw new Error("Target beacon not found. Please ensure you are near the correct beacon device.");
-      }
-
-    } catch (error: unknown) {
-      console.error('BLE scan error:', error);
-      
-      if (error instanceof Error) {
-        if (error.name === 'NotFoundError') {
-          setNotification({
-            message: "Beacon not found. Please ensure you are near the attendance beacon device.",
-            type: 'error',
-            isVisible: true
-          });
-        } else if (error.name === 'NotAllowedError') {
-          setNotification({
-            message: "Bluetooth permission denied. Please allow Bluetooth access and try again.",
-            type: 'error',
-            isVisible: true
-          });
-        } else if (error.name === 'NotSupportedError') {
-          setNotification({
-            message: "Bluetooth not supported on this device. Please use a device with Bluetooth capability.",
-            type: 'error',
-            isVisible: true
-          });
-        } else if (error.message.includes("Target beacon not found")) {
-          setNotification({
-            message: "Wrong device selected. Please select the attendance beacon device.",
-            type: 'error',
-            isVisible: true
-          });
-        } else {
-          setNotification({
-            message: `Bluetooth error: ${error.message || 'Unknown error'}`,
-            type: 'error',
-            isVisible: true
-          });
-        }
-      } else {
-        setNotification({
-          message: "An unknown error occurred during Bluetooth scanning.",
-          type: 'error',
-          isVisible: true
-        });
-      }
-    } finally {
-      setIsCheckingBLE(false);
-    }
+    // Navigate to camera page for attendance marking
+    navigate('/camera');
   };
 
   const handleAdminAccess = () => {
@@ -300,45 +172,27 @@ export default function Home() {
               Authenticated as IIITDM {getUserRole()}
             </span>
           </div>
-          
-          {/* BLE Status Indicator */}
-          <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-blue-100 border border-blue-200">
-            <svg className="w-4 h-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
-            </svg>
-            <span className="text-sm font-medium text-blue-800">
-              BLE Beacon Required for Attendance
-            </span>
-          </div>
         </div>
         
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
           {/* Mark Attendance Card - Enhanced */}
           <div 
-            onClick={isCheckingBLE ? undefined : handleMarkAttendance}
-            className={`group relative bg-gradient-to-br from-blue-50 to-indigo-100 p-6 sm:p-8 rounded-3xl shadow-xl transition-all duration-300 transform hover:shadow-2xl border border-blue-200/50 hover:bg-gradient-to-br hover:from-blue-100 hover:to-indigo-200 ${
-              isCheckingBLE ? 'cursor-not-allowed opacity-75' : 'cursor-pointer hover:scale-105'
-            }`}
+            onClick={handleMarkAttendance}
+            className="group relative bg-gradient-to-br from-blue-50 to-indigo-100 p-6 sm:p-8 rounded-3xl shadow-xl cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border border-blue-200/50 hover:bg-gradient-to-br hover:from-blue-100 hover:to-indigo-200"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
                 <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  {isCheckingBLE ? (
-                    <svg className="h-7 w-7 sm:h-8 sm:w-8 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  ) : (
-                    <svg className="h-7 w-7 sm:h-8 sm:w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
+                  <svg className="h-7 w-7 sm:h-8 sm:w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
                 </div>
                 <span className="text-blue-600 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 bg-blue-100 rounded-full">
-                  {isCheckingBLE ? 'Checking...' : 'Primary'}
+                  Primary
                 </span>
               </div>
               
@@ -346,19 +200,14 @@ export default function Home() {
                 Mark Attendance
               </h3>
               <p className="text-gray-600 text-sm sm:text-base mb-6">
-                {isCheckingBLE 
-                  ? 'Checking if you are in the designated attendance area...'
-                  : 'Use facial recognition to mark your attendance quickly and securely'
-                }
+                Use facial recognition to mark your attendance quickly and securely
               </p>
               
               <div className="flex items-center text-blue-600 font-semibold text-sm sm:text-base group-hover:translate-x-1 transition-transform duration-300">
-                {isCheckingBLE ? 'Checking BLE...' : 'Start Now'}
-                {!isCheckingBLE && (
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                )}
+                Start Now
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </div>
           </div>

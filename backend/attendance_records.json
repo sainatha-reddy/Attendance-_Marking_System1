@@ -138,5 +138,15 @@
     "face_distance": 0.49921003182966206,
     "threshold": 0.6,
     "match": true
+  },
+  {
+    "user_email": "cs23i1010@iiitdm.ac.in",
+    "user_name": "CS23I1010 YAPARLA SAINATHA REDDY",
+    "unique_id": "cs23i1010",
+    "status": "present",
+    "timestamp": "2025-06-30T15:10:08.669924",
+    "face_distance": 0.38794277090446855,
+    "threshold": 0.6,
+    "match": true
   }
 ]

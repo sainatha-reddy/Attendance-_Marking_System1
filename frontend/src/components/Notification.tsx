@@ -82,7 +82,7 @@ export default function Notification({
   };
 
   return (
-    <div className="fixed top-20 right-4 z-[60]">
+    <div className="fixed top-4 right-4 z-50">
       <div
         className={`
           max-w-sm w-full rounded-2xl shadow-lg border-2 p-4 backdrop-blur-sm

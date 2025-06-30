@@ -60,14 +60,63 @@ export default function Home() {
     isVisible: false
   });
   const [isCheckingBLE, setIsCheckingBLE] = useState(false);
+  const [bluetoothPermission, setBluetoothPermission] = useState<'granted' | 'denied' | 'prompt' | 'unsupported'>('prompt');
 
   const hideNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));
   };
 
+  // Check Bluetooth permission status
+  const checkBluetoothPermission = async () => {
+    try {
+      if (!navigator.bluetooth) {
+        setBluetoothPermission('unsupported');
+        return;
+      }
+
+      // Try to request permission
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true
+      });
+      
+      if (device) {
+        setBluetoothPermission('granted');
+        return device;
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          setBluetoothPermission('denied');
+        } else if (error.name === 'NotFoundError' && error.message.includes('Web Bluetooth API globally disabled')) {
+          setBluetoothPermission('unsupported');
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleRequestBluetoothPermission = async () => {
+    try {
+      setIsCheckingBLE(true);
+      const device = await checkBluetoothPermission();
+      if (device) {
+        setNotification({
+          message: "Bluetooth permission granted! You can now mark attendance.",
+          type: 'success',
+          isVisible: true
+        });
+      }
+    } catch (error) {
+      console.error('Bluetooth permission error:', error);
+    } finally {
+      setIsCheckingBLE(false);
+    }
+  };
+
   const handleMarkAttendance = async () => {
     try {
       setIsCheckingBLE(true);
+      
       // Check if Web Bluetooth API is supported
       if (!navigator.bluetooth) {
         setNotification({
@@ -110,7 +159,13 @@ export default function Home() {
       console.error('BLE scan error:', error);
       
       if (error instanceof Error) {
-        if (error.name === 'NotFoundError') {
+        if (error.name === 'NotFoundError' && error.message.includes('Web Bluetooth API globally disabled')) {
+          setNotification({
+            message: "Web Bluetooth is disabled. Please enable it in Chrome: chrome://flags/#enable-web-bluetooth",
+            type: 'error',
+            isVisible: true
+          });
+        } else if (error.name === 'NotFoundError') {
           setNotification({
             message: "Beacon not found. Please ensure you are near the attendance beacon device.",
             type: 'error',
@@ -309,6 +364,72 @@ export default function Home() {
             <span className="text-sm font-medium text-blue-800">
               BLE Beacon Required for Attendance
             </span>
+          </div>
+
+          {/* Bluetooth Permission Section */}
+          <div className="mt-6 max-w-md mx-auto">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                Bluetooth Permission
+              </h3>
+              
+              {bluetoothPermission === 'prompt' && (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-4">
+                    To mark attendance, we need Bluetooth permission to detect the beacon device.
+                  </p>
+                  <button
+                    onClick={handleRequestBluetoothPermission}
+                    disabled={isCheckingBLE}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCheckingBLE ? 'Requesting Permission...' : 'Grant Bluetooth Permission'}
+                  </button>
+                </div>
+              )}
+
+              {bluetoothPermission === 'granted' && (
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-green-600 font-medium">Bluetooth permission granted!</p>
+                  <p className="text-gray-600 text-sm mt-1">You can now mark attendance.</p>
+                </div>
+              )}
+
+              {bluetoothPermission === 'denied' && (
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <p className="text-red-600 font-medium">Bluetooth permission denied</p>
+                  <p className="text-gray-600 text-sm mt-1">Please allow Bluetooth access in your browser settings.</p>
+                  <button
+                    onClick={handleRequestBluetoothPermission}
+                    className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+
+              {bluetoothPermission === 'unsupported' && (
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <p className="text-yellow-600 font-medium">Bluetooth not supported</p>
+                  <p className="text-gray-600 text-sm mt-1">Please use Chrome, Edge, or Opera browser.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         

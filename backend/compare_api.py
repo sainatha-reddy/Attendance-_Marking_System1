@@ -40,6 +40,9 @@ N = 3.2
 ALPHA = 0.6  # EMA smoothing
 MAX_DISTANCE = 5.0  # Maximum distance in meters to consider "in range"
 
+# Environment configuration
+ENABLE_BLE_CHECK = os.environ.get('ENABLE_BLE_CHECK', 'true').lower() == 'true'
+
 def estimate_distance(rssi):
     """Estimate distance from RSSI"""
     return 10 ** ((MEASURED_POWER - rssi) / (10 * N))
@@ -72,6 +75,11 @@ async def scan_for_target_ble(timeout=3.0):
         
         print(f"❌ Target device {TARGET_ADDRESS} not found in scan")
         return False, None, None
+    except FileNotFoundError as e:
+        print(f"⚠️ Bluetooth hardware not available (cloud environment): {e}")
+        # In cloud environment, we can't scan for BLE devices
+        # Return a special status indicating this
+        return "cloud_environment", None, None
     except Exception as e:
         print(f"BLE scan error: {e}")
         return False, None, None
@@ -292,8 +300,34 @@ def test():
 def check_ble_status():
     """Check if BLE beacon is detected"""
     try:
+        # If BLE check is disabled via environment variable, allow attendance
+        if not ENABLE_BLE_CHECK:
+            return jsonify({
+                'success': True,
+                'ble_found': True,
+                'ble_rssi': None,
+                'ble_distance': None,
+                'target_address': TARGET_ADDRESS,
+                'max_distance': MAX_DISTANCE,
+                'environment': 'disabled',
+                'message': 'BLE check disabled via environment variable'
+            })
+        
         print(f"🔍 BLE status check for device: {TARGET_ADDRESS}")
         found, rssi, ble_distance = asyncio.run(scan_for_target_ble(timeout=3.0))
+        
+        # Handle cloud environment case
+        if found == "cloud_environment":
+            return jsonify({
+                'success': True,
+                'ble_found': True,  # Allow attendance in cloud environment
+                'ble_rssi': None,
+                'ble_distance': None,
+                'target_address': TARGET_ADDRESS,
+                'max_distance': MAX_DISTANCE,
+                'environment': 'cloud',
+                'message': 'Running in cloud environment - BLE check bypassed'
+            })
         
         return jsonify({
             'success': True,
@@ -301,7 +335,8 @@ def check_ble_status():
             'ble_rssi': rssi,
             'ble_distance': ble_distance,
             'target_address': TARGET_ADDRESS,
-            'max_distance': MAX_DISTANCE
+            'max_distance': MAX_DISTANCE,
+            'environment': 'local'
         })
         
     except Exception as e:

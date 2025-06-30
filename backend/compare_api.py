@@ -8,10 +8,6 @@ import warnings
 from datetime import datetime
 import json
 from flask_cors import CORS
-from bleak import BleakScanner
-import asyncio
-import math
-import time
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -32,57 +28,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Local storage for attendance records
 ATTENDANCE_FILE = 'attendance_records.json'
-
-# BLE Configuration
-TARGET_ADDRESS = "B0:D2:78:48:3E:5A"
-MEASURED_POWER = -73
-N = 3.2
-ALPHA = 0.6  # EMA smoothing
-MAX_DISTANCE = 5.0  # Maximum distance in meters to consider "in range"
-
-# Environment configuration
-ENABLE_BLE_CHECK = os.environ.get('ENABLE_BLE_CHECK', 'true').lower() == 'true'
-
-def estimate_distance(rssi):
-    """Estimate distance from RSSI"""
-    return 10 ** ((MEASURED_POWER - rssi) / (10 * N))
-
-async def scan_for_target_ble(timeout=3.0):
-    """Scan for the specific BLE device synchronously"""
-    try:
-        print(f"🔍 Scanning for BLE device {TARGET_ADDRESS}...")
-        devices = await BleakScanner.discover(timeout=timeout)
-        
-        for d in devices:
-            if d.address == TARGET_ADDRESS:
-                # Try to get RSSI safely
-                rssi = -100  # Default value
-                try:
-                    # Try direct RSSI access first
-                    rssi = d.rssi
-                except AttributeError:
-                    try:
-                        # Try metadata access
-                        rssi = d.metadata.get('rssi', -100)
-                    except AttributeError:
-                        # If metadata doesn't exist, use default
-                        rssi = -100
-                        print(f"⚠️ Could not get RSSI for device {d.address}, using default value")
-                
-                distance = estimate_distance(rssi)
-                print(f"✅ Found target device: {d.name or 'Unknown'} ({d.address}) RSSI: {rssi}dBm, Distance: {distance:.2f}m")
-                return True, rssi, distance
-        
-        print(f"❌ Target device {TARGET_ADDRESS} not found in scan")
-        return False, None, None
-    except FileNotFoundError as e:
-        print(f"⚠️ Bluetooth hardware not available (cloud environment): {e}")
-        # In cloud environment, we can't scan for BLE devices
-        # Return a special status indicating this
-        return "cloud_environment", None, None
-    except Exception as e:
-        print(f"BLE scan error: {e}")
-        return False, None, None
 
 def save_attendance_record(record):
     """Save attendance record to local JSON file"""
@@ -295,57 +240,6 @@ def compare_image():
 @app.route('/test', methods=['GET', 'POST'])
 def test():
     return jsonify({'status': 'ok'})
-
-@app.route('/api/ble-check', methods=['GET'])
-def check_ble_status():
-    """Check if BLE beacon is detected"""
-    try:
-        # If BLE check is disabled via environment variable, allow attendance
-        if not ENABLE_BLE_CHECK:
-            return jsonify({
-                'success': True,
-                'ble_found': True,
-                'ble_rssi': None,
-                'ble_distance': None,
-                'target_address': TARGET_ADDRESS,
-                'max_distance': MAX_DISTANCE,
-                'environment': 'disabled',
-                'message': 'BLE check disabled via environment variable'
-            })
-        
-        print(f"🔍 BLE status check for device: {TARGET_ADDRESS}")
-        found, rssi, ble_distance = asyncio.run(scan_for_target_ble(timeout=3.0))
-        
-        # Handle cloud environment case
-        if found == "cloud_environment":
-            return jsonify({
-                'success': True,
-                'ble_found': True,  # Allow attendance in cloud environment
-                'ble_rssi': None,
-                'ble_distance': None,
-                'target_address': TARGET_ADDRESS,
-                'max_distance': MAX_DISTANCE,
-                'environment': 'cloud',
-                'message': 'Running in cloud environment - BLE check bypassed'
-            })
-        
-        return jsonify({
-            'success': True,
-            'ble_found': found,
-            'ble_rssi': rssi,
-            'ble_distance': ble_distance,
-            'target_address': TARGET_ADDRESS,
-            'max_distance': MAX_DISTANCE,
-            'environment': 'local'
-        })
-        
-    except Exception as e:
-        print(f"BLE check error: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'ble_found': False
-        }), 500
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8080) 

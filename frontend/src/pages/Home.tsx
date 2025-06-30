@@ -3,6 +3,50 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Notification from '../components/Notification';
 
+// TypeScript declarations for Web Bluetooth API
+declare global {
+  interface Navigator {
+    bluetooth?: Bluetooth;
+  }
+  
+  interface Bluetooth {
+    requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
+  }
+  
+  interface RequestDeviceOptions {
+    acceptAllDevices?: boolean;
+    filters?: BluetoothRequestDeviceFilter[];
+    optionalServices?: string[];
+  }
+  
+  interface BluetoothRequestDeviceFilter {
+    address?: string;
+    name?: string;
+    namePrefix?: string;
+    services?: string[];
+  }
+  
+  interface BluetoothDevice {
+    id: string;
+    name?: string;
+    gatt?: BluetoothRemoteGATTServer;
+  }
+  
+  interface BluetoothRemoteGATTServer {
+    connect(): Promise<BluetoothRemoteGATTServer>;
+    getPrimaryService(service: string): Promise<BluetoothRemoteGATTService>;
+  }
+  
+  interface BluetoothRemoteGATTService {
+    getCharacteristic(characteristic: string): Promise<BluetoothRemoteGATTCharacteristic>;
+  }
+  
+  interface BluetoothRemoteGATTCharacteristic {
+    readValue(): Promise<DataView>;
+    writeValue(value: BufferSource): Promise<void>;
+  }
+}
+
 export default function Home() {
   const { user, logout, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -24,45 +68,79 @@ export default function Home() {
   const handleMarkAttendance = async () => {
     try {
       setIsCheckingBLE(true);
-      // First check if BLE device is in range
-      console.log("🔍 Checking BLE device before proceeding...");
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      // Check if Web Bluetooth API is supported
+      if (!navigator.bluetooth) {
+        setNotification({
+          message: "Bluetooth is not supported in this browser. Please use Chrome, Edge, or Opera.",
+          type: 'error',
+          isVisible: true
+        });
+        return;
+      }
+
+      console.log("🔍 Starting BLE scan from device...");
       
-      const response = await fetch(`${apiUrl}/api/ble-check`, {
-        method: 'GET',
+      // Request Bluetooth permission and scan for devices
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: false,
+        filters: [
+          {
+            address: "B0:D2:78:48:3E:5A"  // Your specific beacon address
+          }
+        ],
+        optionalServices: []
       });
+
+      console.log("✅ BLE device found:", device.name);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log("BLE check result:", data);
-        
-        if (data.ble_found) {
-          console.log("✅ BLE device found, proceeding to camera page");
-          // Navigate to camera page for attendance marking
-          navigate('/camera');
-        } else {
-          console.log("❌ BLE device not found");
+      // If we get here, the device was found
+      setNotification({
+        message: "Beacon detected! Proceeding to camera page.",
+        type: 'success',
+        isVisible: true
+      });
+
+      // Navigate to camera page for attendance marking
+      setTimeout(() => {
+        navigate('/camera');
+      }, 1500);
+
+    } catch (error: unknown) {
+      console.error('BLE scan error:', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotFoundError') {
           setNotification({
-            message: "You are not in the designated attendance area. Please move closer to the beacon device.",
+            message: "Beacon not found. Please ensure you are near the attendance beacon device.",
+            type: 'error',
+            isVisible: true
+          });
+        } else if (error.name === 'NotAllowedError') {
+          setNotification({
+            message: "Bluetooth permission denied. Please allow Bluetooth access and try again.",
+            type: 'error',
+            isVisible: true
+          });
+        } else if (error.name === 'NotSupportedError') {
+          setNotification({
+            message: "Bluetooth not supported on this device. Please use a device with Bluetooth capability.",
+            type: 'error',
+            isVisible: true
+          });
+        } else {
+          setNotification({
+            message: `Bluetooth error: ${error.message || 'Unknown error'}`,
             type: 'error',
             isVisible: true
           });
         }
       } else {
-        console.error('BLE check failed with status:', response.status);
         setNotification({
-          message: "Unable to check attendance area. Please try again.",
+          message: "An unknown error occurred during Bluetooth scanning.",
           type: 'error',
           isVisible: true
         });
       }
-    } catch (error) {
-      console.error('BLE check error:', error);
-      setNotification({
-        message: "Network error. Please check your connection and try again.",
-        type: 'error',
-        isVisible: true
-      });
     } finally {
       setIsCheckingBLE(false);
     }

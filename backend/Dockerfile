@@ -10,7 +10,7 @@ ENV FLASK_ENV=production
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies required for face_recognition and dlib
+# Install system dependencies required for face_recognition, dlib, and BLE scanning
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -22,6 +22,12 @@ RUN apt-get update && apt-get install -y \
     libopencv-dev \
     python3-dev \
     pkg-config \
+    bluetooth \
+    bluez \
+    libbluetooth-dev \
+    libdbus-1-dev \
+    libglib2.0-dev \
+    libudev-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

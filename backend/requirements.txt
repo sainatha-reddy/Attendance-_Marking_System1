@@ -7,3 +7,4 @@ dlib
 python-dotenv
 supabase
 gunicorn
+bleak

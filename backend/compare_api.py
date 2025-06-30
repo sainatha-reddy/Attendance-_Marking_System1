@@ -7,29 +7,10 @@ from dotenv import load_dotenv
 import warnings
 from datetime import datetime
 import json
-from bleak import BleakScanner
-import asyncio
-import math
+
 from flask_cors import CORS
 
 warnings.filterwarnings("ignore", category=UserWarning)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 load_dotenv()
 
 # Initialize Flask app

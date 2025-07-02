@@ -69,7 +69,7 @@ export default function Home() {
   const isAdmin = () => {
     if (!user?.email) return false;
     const email = user.email.toLowerCase();
-    return email.includes('cs23i1010') || email.includes('raghavans') || email.includes('admin');
+    return email.includes('cs23i1010') || email.includes('raghavans') || email.includes('admin') || email.includes('cs23i1034');
   };
 
   useEffect(() => {
